@@ -1,0 +1,57 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/header :: header}"/>
+
+<body>
+      <div class="container mt-5">
+
+          <div th:replace="~{fragments/bodyHeader :: bodyHeader}"/>
+
+          <h1>상품 등록</h1>
+
+          <form th:action="@{/shop/addItem}" th:object="${itemForm}" method="post" enctype="multipart/form-data">
+
+
+          <!-- 상품 제목 -->
+        <div class="form-group">
+          <label for="itemTitle">상품명</label>
+          <input type="text" name="itemTitle" id="itemTitle" class="form-control"
+                 placeholder="상품명을 입력하세요" required>
+        </div>
+        <br />
+        <!-- 상품 내용 -->
+        <div class="form-group">
+          <label for="itemContent">상품 설명</label>
+          <textarea name="itemContent" id="itemContent" rows="5" class="form-control"
+                    placeholder="상품 설명을 입력하세요"></textarea>
+        </div>
+        <br />
+        <!-- 상품 가격 -->
+        <div class="form-group">
+          <label for="itemPrice">상품 가격</label>
+          <input type="number" name="itemPrice" id="itemPrice" class="form-control"
+                 placeholder="가격을 입력하세요 (예: 1000)" step="0.01" min="0">
+        </div>
+        <br />
+        <!-- 이미지 업로드 -->
+        <div class="form-group">
+          <label for="imgFile">상품 이미지</label>
+          <input type="file" name="imgFile" id="imgFile" class="form-control-file"
+                 accept="image/*">
+        </div>
+
+
+        <!-- 제출 버튼 -->
+        <button type="submit" class="btn btn-primary mt-3">등록</button>
+      </form>
+
+      <br>
+      <br>
+          <div th:replace="~{fragments/footer :: footer}"/>
+    </div>
+
+
+</div> <!-- /container -->
+</body>
+</html>

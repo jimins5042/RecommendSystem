@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--ItemMapper의 위치를 적어줌-->
+<mapper namespace="shop.RecommendSystem.repository.mapper.ItemMapper">
+
+    <!--아이템 객체의 속성 값들을 넣어줌-->
+    <insert id="save" useGeneratedKeys="true" keyProperty="itemId" parameterType="Item">
+        INSERT INTO shop_board (item_title, item_content, item_price, item_image_link)
+        VALUES (#{itemTitle}, #{itemContent}, #{itemPrice}, #{itemImageLink})
+    </insert>
+
+
+    <insert id="insertImageInfo" useGeneratedKeys="true" keyProperty="imageId" parameterType="ImageInfo">
+        INSERT INTO image_info (image_uuid, image_original_name, image_url, image_hash_code)
+        VALUES (#{imageUuid}, #{imageOriginalName}, ${#imageUrl}, ${imageHashCode})
+    </insert>
+
+
+    <!--resultType: 조회하는 item의 경로를 적어주어야 하나, application.properties에 경로를 넣어준만큼 생략가능-->
+    <select id="findById" parameterType="Long" resultType="Item">
+
+        SELECT
+            s.item_id,
+            s.item_title,
+            s.item_content,
+            s.item_date,
+            s.item_price,
+            i.image_url,
+            i.image_hash_code
+        FROM
+            shop_board AS s
+                LEFT JOIN
+            image_info AS i
+            ON
+                s.item_image_link = i.image_uuid
+        WHERE
+            s.item_id = #{id};
+    </select>
+
+    <select id="findAll" resultType="Item">
+
+        select id, item_name, price, quantity
+        from item
+        <where>
+            <if test="itemName != null and itemName != ''">
+                and item_name like concat('%', #{itemName}, '%')
+            </if>
+            <if test="maxPrice != null">
+                and price &lt;= #{maxprice}
+            </if>
+
+        </where>
+    </select>
+
+    <delete id="delete">
+        delete
+        from item
+        where id = #{id};
+    </delete>
+
+</mapper>
