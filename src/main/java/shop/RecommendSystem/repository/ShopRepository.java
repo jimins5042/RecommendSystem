@@ -8,6 +8,8 @@ import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.stereotype.Repository;
 import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
+import shop.RecommendSystem.service.ImageControlLogicService;
+import shop.RecommendSystem.service.ImagePHash;
 import shop.RecommendSystem.service.ShopService;
 
 import java.util.Base64;
@@ -33,6 +35,7 @@ public class ShopRepository {
 
     //mapper의 의존관계 구현체를 주입
     private final ItemMapper itemMapper;
+    private final ImageControlLogicService imgctrl;
 
 
     public long save(Item item) {
@@ -45,7 +48,15 @@ public class ShopRepository {
     }
 
     public Item findById(Long itemId) {
-        return itemMapper.findById(itemId);
+        Item item = itemMapper.findById(itemId);
+
+        try{
+            item.setItemImageLink(imgctrl.cropAndResizeImage(item.getItemImageLink(), 400, 300));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return item;
     }
 
     public List<Item> selectAll(Long page, Long size) {
@@ -73,54 +84,8 @@ public class ShopRepository {
         map.put("size", size);
 
         List<Item> items = itemMapper.findThumbnailAll(map);
-/*
-        for (Item item : items) {
-            String url = cropAndResizeImage(item.getItemImageLink(), 400, 300);
-
-            item.setItemImageLink(url);
-        }
-
- */     //비동기 처리
-        ExecutorService executor = Executors.newFixedThreadPool(10); // 최대 10개의 스레드를 사용
-        List<CompletableFuture<Void>> futures = items.stream()
-                .map(item -> CompletableFuture.runAsync(() -> {
-                    try {
-                        String url = cropAndResizeImage(item.getItemImageLink(), 400, 300);
-                        item.setItemImageLink(url);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }, executor))  // Executor를 명시적으로 지정
-                .collect(Collectors.toList());
-
-        // 모든 작업이 완료될 때까지 기다림
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
-        executor.shutdown(); // 작업 완료 후 Executor 종료
 
         return items;
-    }
-
-    private String cropAndResizeImage(String imageUrl, int targetWidth, int targetHeight) throws Exception {
-        // S3 URL에서 이미지 다운로드
-        URL url = new URL(imageUrl);
-        BufferedImage originalImage = ImageIO.read(url);
-
-
-        // 리사이즈 후 Base64로 변환
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        Thumbnails.of(originalImage)
-                .size(targetWidth, targetHeight)
-                .outputFormat("jpeg")
-                .outputQuality(0.8)
-                .toOutputStream(outputStream);
-
-        // Base64로 변환
-        byte[] resizedImageData = outputStream.toByteArray();
-        String base64Image = Base64.getEncoder().encodeToString(resizedImageData);
-
-        // "data:image/jpeg;base64," 형식으로 반환
-        return "data:image/jpeg;base64," + base64Image;
     }
 
     public Long countItems() {

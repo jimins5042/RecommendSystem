@@ -26,7 +26,7 @@
                s.item_date,
                s.item_price,
                i.image_url as item_image_link,
-               i.image_hash_code
+               i.image_hash_code as hashCode
         FROM shop_board AS s
                  LEFT JOIN
              image_info AS i
