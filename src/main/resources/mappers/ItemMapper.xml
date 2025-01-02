@@ -17,46 +17,63 @@
     </insert>
 
 
-    <!--resultType: 조회하는 item의 경로를 적어주어야 하나, application.properties에 경로를 넣어준만큼 생략가능-->
+    <!--글 상세 보기-->
     <select id="findById" parameterType="Long" resultType="Item">
 
-        SELECT
-            s.item_id,
-            s.item_title,
-            s.item_content,
-            s.item_date,
-            s.item_price,
-            i.image_url,
-            i.image_hash_code
-        FROM
-            shop_board AS s
-                LEFT JOIN
-            image_info AS i
-            ON
-                s.item_image_link = i.image_uuid
-        WHERE
-            s.item_id = #{id};
+        SELECT s.item_id,
+               s.item_title,
+               s.item_content,
+               s.item_date,
+               s.item_price,
+               i.image_url as item_image_link,
+               i.image_hash_code
+        FROM shop_board AS s
+                 LEFT JOIN
+             image_info AS i
+             ON
+                 s.item_image_link = i.image_uuid
+        WHERE s.item_id = #{id};
+    </select>
+    <!--글 목록 및 글 관리-->
+    <select id="findAll" resultType="Item" parameterType="Map">
+        SELECT item_id,
+               item_title,
+               item_date
+        FROM shop_board
+        ORDER BY item_id DESC
+            LIMIT #{offset}, #{size}
     </select>
 
-    <select id="findAll" resultType="Item">
-
-        select id, item_name, price, quantity
-        from item
-        <where>
-            <if test="itemName != null and itemName != ''">
-                and item_name like concat('%', #{itemName}, '%')
-            </if>
-            <if test="maxPrice != null">
-                and price &lt;= #{maxprice}
-            </if>
-
-        </where>
+    <select id="findThumbnailAll" resultType="Item" parameterType="Map">
+        SELECT s.item_id,
+               s.item_title,
+               s.item_price,
+               i.image_url as item_image_link
+        FROM shop_board as s
+                 LEFT JOIN
+             image_info AS i
+             ON
+                 s.item_image_link = i.image_uuid
+        where s.item_image_link is not null
+            LIMIT #{offset}
+            , #{size}
     </select>
 
-    <delete id="delete">
-        delete
-        from item
-        where id = #{id};
+    <select id="countItems" resultType="long">
+        SELECT COUNT(*)
+        FROM shop_board
+    </select>
+
+    <delete id="delete" parameterType="Long">
+        DELETE
+        s, i, c
+            FROM shop_board AS s
+            LEFT JOIN image_info AS i
+                ON s.item_image_link = i.image_uuid
+            LEFT JOIN image_color_tag AS c
+                ON s.item_image_link = c.image_color_uuid
+            WHERE s.item_id =
+        #{id};
     </delete>
 
 </mapper>

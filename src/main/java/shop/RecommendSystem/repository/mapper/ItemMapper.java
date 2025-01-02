@@ -5,7 +5,7 @@ import shop.RecommendSystem.dto.ImageInfo;
 import shop.RecommendSystem.dto.Item;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @Mapper
 public interface ItemMapper {
@@ -15,7 +15,10 @@ public interface ItemMapper {
 
     Item findById(Long id);
 
-    List<Item> findAll(Item itemSearch);
+    List<Item> findAll(Map<String, Long> map);
+    List<Item> findThumbnailAll(Map<String, Long> map);
+
+    Long countItems();
 
     void delete(Long id);
 }
