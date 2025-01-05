@@ -18,7 +18,6 @@ public class ImagePHash {
     private static final int SIZE = 64;//32; // DCT를 위한 크기
     private static final int SMALL_SIZE = 16;//8; // 해시값을 생성할 크기
 
-    //public String getPHash(BufferedImage img) {
     public String getPHash(String imgUrl) throws IOException {
 
 
@@ -90,11 +89,12 @@ public class ImagePHash {
     }
 
     private static double[] getTopLeft(double[][] dctValues, int size) {
-        double[] topLeft = new double[size*size];
+        double[] topLeft = new double[size * size];
         int l = 0;
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
+
                 topLeft[l++] = dctValues[j][i];
             }
         }
@@ -127,15 +127,15 @@ public class ImagePHash {
 
         for (int i = 0; i < size; i++) {
 
-                // 현재 비트를 추가
-                hexValue = (hexValue << 1) | (values[i] > average ? 1 : 0);
-                bitCount++;
+            // 현재 비트를 추가
+            hexValue = (hexValue << 1) | (values[i] > average ? 1 : 0);
+            bitCount++;
 
-                // 4비트가 쌓이면 16진수 문자로 변환
-                if (bitCount == 4) {
-                    hexHash.append(Integer.toHexString(hexValue));
-                    hexValue = 0; // 초기화
-                    bitCount = 0; // 초기화
+            // 4비트가 쌓이면 16진수 문자로 변환
+            if (bitCount == 4) {
+                hexHash.append(Integer.toHexString(hexValue));
+                hexValue = 0; // 초기화
+                bitCount = 0; // 초기화
             }
         }
         // 남은 비트 처리 (4비트 미만인 경우)
@@ -145,6 +145,8 @@ public class ImagePHash {
         }
         return hexHash.toString();
     }
+
+
 
 
 }

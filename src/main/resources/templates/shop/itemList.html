@@ -43,9 +43,10 @@
 </head>
 
 <body>
+<div th:replace="~{fragments/bodyHeader :: bodyHeader}"/>
 <div class="container">
     <!-- 바디 헤더 포함 -->
-    <div th:replace="~{fragments/bodyHeader :: bodyHeader}"/>
+
 
     <div>
         <button id="uploadBtn" class="btn btn-success mb-2" style="float: right;" onclick="goToAddItemPage()">글 작성 페이지

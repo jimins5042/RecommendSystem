@@ -4,20 +4,12 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.stereotype.Repository;
 import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
 import shop.RecommendSystem.service.ImageControlLogicService;
 import shop.RecommendSystem.service.ImagePHash;
-import shop.RecommendSystem.service.ShopService;
 
-import java.util.Base64;
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+
 
 @Repository
 @Getter
@@ -50,8 +43,14 @@ public class ShopRepository {
     public Item findById(Long itemId) {
         Item item = itemMapper.findById(itemId);
 
-        try{
-            item.setItemImageLink(imgctrl.cropAndResizeImage(item.getItemImageLink(), 400, 300));
+        try {
+
+            long beforeTime = System.currentTimeMillis(); //코드 실행 전에 시간 받아오기
+            ImagePHash pHash = new ImagePHash();
+            log.info("pHash = {}" , pHash.getPHash(item.getItemImageLink()));
+            log.info("time = {}" , System.currentTimeMillis() - beforeTime);
+
+            item.setItemImageLink(imgctrl.cropAndResizeImage(item.getItemImageLink(), 600, 600, 0));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -84,6 +83,23 @@ public class ShopRepository {
         map.put("size", size);
 
         List<Item> items = itemMapper.findThumbnailAll(map);
+
+        ExecutorService executor = Executors.newFixedThreadPool(10); // 최대 10개의 스레드를 사용
+        List<CompletableFuture<Void>> futures = items.stream()
+                .map(item -> CompletableFuture.runAsync(() -> {
+                    try {
+                        String url = imgctrl.cropAndResizeImage(item.getItemImageLink(), 400, 300, 1);
+                        item.setItemImageLink(url);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }, executor))  // Executor를 명시적으로 지정
+                .collect(Collectors.toList());
+
+        // 모든 작업이 완료될 때까지 기다림
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        executor.shutdown(); // 작업 완료 후 Executor 종료
 
         return items;
     }
