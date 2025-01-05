@@ -1,29 +1,48 @@
 package shop.RecommendSystem.service;
 
-import java.awt.Graphics2D;
-import java.awt.Image;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
-import javax.imageio.ImageIO;
 
 /*
     https://gist.github.com/kuFEAR/6e20342198d4040e0bb5 참고
  */
 public class ImagePHash {
 
-    private static final int SIZE = 64;//32; // DCT를 위한 크기
-    private static final int SMALL_SIZE = 16;//8; // 해시값을 생성할 크기
+    private static final int SIZE = 64; // DCT를 위한 크기
+    private static final int SMALL_SIZE = 16; // 해시값을 생성할 크기
 
     public String getPHash(String imgUrl) throws IOException {
-
 
         // 0. aws s3 링크를 BufferedImage로 변환
         URL url = new URL(imgUrl);
         BufferedImage img = ImageIO.read(url);
+
+        return calPHash(img);
+    }
+    public String getPHash(MultipartFile imgFile) throws IOException {
+
+        // 0. MultipartFile을 InputStream으로 받아 BufferedImage로 변환
+        InputStream inputStream = imgFile.getInputStream();
+        BufferedImage img = ImageIO.read(inputStream);
+
+        return calPHash(img);
+    }
+
+    public String calPHash(BufferedImage img) throws IOException {
+
+        // 0. aws s3 링크를 BufferedImage로 변환
+        /*
+        URL url = new URL(imgUrl);
+        BufferedImage img = ImageIO.read(url);
+
+         */
 
         // 1. 이미지를 흑백으로 변환하고 크기를 SIZE x SIZE로 조정
         BufferedImage resizedImage = resizeAndGrayscale(img, SIZE, SIZE);

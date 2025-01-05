@@ -4,53 +4,83 @@
 <head th:replace="~{fragments/header :: header}"/>
 
 <body>
-      <div class="container mt-5">
+<div class="container mt-5">
 
-          <div th:replace="~{fragments/bodyHeader :: bodyHeader}"/>
+    <div th:replace="~{fragments/bodyHeader :: bodyHeader}"/>
 
-          <h1>상품 등록</h1>
+    <h1>상품 등록</h1>
 
-          <form th:action="@{/shop/addItem}" th:object="${itemForm}" method="post" enctype="multipart/form-data">
+    <form th:action="@{/shop/addItem}" th:object="${itemForm}" method="post" enctype="multipart/form-data">
 
 
-          <!-- 상품 제목 -->
+        <!-- 상품 제목 -->
         <div class="form-group">
-          <label for="itemTitle">상품명</label>
-          <input type="text" name="itemTitle" id="itemTitle" class="form-control"
-                 placeholder="상품명을 입력하세요" required>
+            <label for="itemTitle">상품명</label>
+            <input type="text" name="itemTitle" id="itemTitle" class="form-control"
+                   placeholder="상품명을 입력하세요" required>
         </div>
-        <br />
+        <br/>
         <!-- 상품 내용 -->
         <div class="form-group">
-          <label for="itemContent">상품 설명</label>
-          <textarea name="itemContent" id="itemContent" rows="5" class="form-control"
-                    placeholder="상품 설명을 입력하세요"></textarea>
+            <label for="itemContent">상품 설명</label>
+            <textarea name="itemContent" id="itemContent" rows="5" class="form-control"
+                      placeholder="상품 설명을 입력하세요"></textarea>
         </div>
-        <br />
+        <br/>
         <!-- 상품 가격 -->
         <div class="form-group">
-          <label for="itemPrice">상품 가격</label>
-          <input type="number" name="itemPrice" id="itemPrice" class="form-control"
-                 placeholder="가격을 입력하세요 (예: 1000)" step="0.01" min="0">
+            <label for="itemPrice">상품 가격</label>
+            <input type="number" name="itemPrice" id="itemPrice" class="form-control"
+                   placeholder="가격을 입력하세요 (예: 1000)" step="0.01" min="0">
         </div>
-        <br />
+        <br/>
         <!-- 이미지 업로드 -->
         <div class="form-group">
-          <label for="imgFile">상품 이미지</label>
-          <input type="file" name="imgFile" id="imgFile" class="form-control-file"
-                 accept="image/*">
+            <label for="imgFile">상품 이미지</label>
+            <input type="file" name="imgFile" id="imgFile" class="form-control-file"
+                   accept="image/*">
         </div>
 
+        <!-- 숨겨진 입력 필드 -->
+        <input type="hidden" name="palette" id="palette">
 
         <!-- 제출 버튼 -->
         <button type="submit" class="btn btn-primary mt-3">등록</button>
-      </form>
+    </form>
 
-      <br>
-      <br>
-          <div th:replace="~{fragments/footer :: footer}"/>
-    </div>
+    <br>
+    <br>
+    <div th:replace="~{fragments/footer :: footer}"/>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+<script>
+    const img = new Image();
+    const colorThief = new ColorThief();
 
+    function rgbToHex(rgbArray) {
+        return "#" + rgbArray.map(x => {
+            const hex = x.toString(16);
+            return hex.length === 1 ? "0" + hex : hex;
+        }).join('');
+    }
+
+    // 파일이 선택되면 이미지로 로드하고 canvas에 그리기
+    document.getElementById("imgFile").addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                img.src = e.target.result;
+                img.onload = () => {
+                    const palette = colorThief.getPalette(img, 5); // 5가지 색상 추출
+                    document.getElementById("palette").value = JSON.stringify(palette);
+                    console.log("추출된 색상:", palette);
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
 
 </div> <!-- /container -->
 </body>

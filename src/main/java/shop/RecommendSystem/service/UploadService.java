@@ -49,9 +49,11 @@ public class UploadService {
             // 등록된 객체의 url 반환 (decoder: url 안의 한글or특수문자 깨짐 방지)
             imgUrl = (cloudfront + uuid).toString();
 
-            ImageInfo image = new ImageInfo(uuid, file.getOriginalFilename(), imgUrl, "hash");
+            String pHash = new ImagePHash().getPHash(imgUrl);
 
-            log.info("fullPath={} \nuuid={} \nfileName = {} ", imgUrl, uuid, file.getOriginalFilename());
+            ImageInfo image = new ImageInfo(uuid, file.getOriginalFilename(), imgUrl, pHash);
+
+            log.info("fullPath={} \nuuid={} \nfileName = {} \npHash = {}", imgUrl, uuid, file.getOriginalFilename(), pHash);
             itemMapper.insertImageInfo(image); //이미지 주소, 이름 저장
 
 
@@ -59,7 +61,7 @@ public class UploadService {
             log.info("=== 이미지 저장 중 에러 발생)");
             e.printStackTrace();
         }
-        return imgUrl;
+        return uuid;
     }
 
     //aws s3에 이미지 삭제

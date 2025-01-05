@@ -44,12 +44,6 @@ public class ShopRepository {
         Item item = itemMapper.findById(itemId);
 
         try {
-
-            long beforeTime = System.currentTimeMillis(); //코드 실행 전에 시간 받아오기
-            ImagePHash pHash = new ImagePHash();
-            log.info("pHash = {}" , pHash.getPHash(item.getItemImageLink()));
-            log.info("time = {}" , System.currentTimeMillis() - beforeTime);
-
             item.setItemImageLink(imgctrl.cropAndResizeImage(item.getItemImageLink(), 600, 600, 0));
         } catch (Exception e) {
             throw new RuntimeException(e);
