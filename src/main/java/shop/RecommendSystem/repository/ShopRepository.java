@@ -43,22 +43,25 @@ public class ShopRepository {
     public Item findById(Long itemId) {
         Item item = itemMapper.findById(itemId);
 
-        try {
-            item.setItemImageLink(imgctrl.cropAndResizeImage(item.getItemImageLink(), 600, 600, 0));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if(item.getItemImageLink() != null) {
+            try {
+                item.setItemImageLink(imgctrl.cropAndResizeImage(item.getItemImageLink(), 600, 600, 0));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
         return item;
     }
 
     public List<Item> selectAll(Long page, Long size) {
-        if (page == null || page < 1) {
+        if (page == null) {
             page = 1L;
         }
-        if (size == null || size < 1) {
+        if (size == null) {
             size = 10L;
         }
+        log.info("offset: " + page);
         Map<String, Long> map = new HashMap<>();
         map.put("offset", page);
         map.put("size", size);
@@ -66,10 +69,10 @@ public class ShopRepository {
     }
 
     public List<Item> findThumbnailAll(Long page, Long size) throws Exception {
-        if (page == null || page < 1) {
+        if (page == null) {
             page = 1L;
         }
-        if (size == null || size < 1) {
+        if (size == null) {
             size = 10L;
         }
         Map<String, Long> map = new HashMap<>();

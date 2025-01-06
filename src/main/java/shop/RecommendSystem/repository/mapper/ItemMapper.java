@@ -11,11 +11,15 @@ import java.util.Map;
 public interface ItemMapper {
 
     void save(Item item);
+
     void insertImageInfo(ImageInfo imageInfo);
+
+    void insertImgColorTag(Map<String, String> map);
 
     Item findById(Long id);
 
     List<Item> findAll(Map<String, Long> map);
+
     List<Item> findThumbnailAll(Map<String, Long> map);
 
     Long countItems();

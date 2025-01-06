@@ -11,9 +11,16 @@
     </insert>
 
 
-    <insert id="insertImageInfo" useGeneratedKeys="true" keyProperty="imageId" parameterType="ImageInfo">
+    <insert id="insertImageInfo" useGeneratedKeys="true" keyProperty="imageId" parameterType="shop.RecommendSystem.dto.ImageInfo">
         INSERT INTO image_info (image_uuid, image_original_name, image_url, image_hash_code)
-        VALUES (#{imageUuid}, #{imageOriginalName}, ${#imageUrl}, ${imageHashCode})
+        VALUES (#{imageUuid}, #{imageOriginalName}, #{imageUrl}, #{imageHashCode})
+    </insert>
+
+
+    <insert id="insertImgColorTag" useGeneratedKeys="true" keyProperty="imageColorId" parameterType="Map">
+        INSERT
+        IGNORE INTO image_color_tag (image_color_uuid, color_tag)
+        VALUES(#{uuid}, #{tag})
     </insert>
 
 
@@ -40,7 +47,7 @@
                item_title,
                item_date
         FROM shop_board
-        ORDER BY item_id DESC
+        ORDER BY item_id desc
             LIMIT #{offset}, #{size}
     </select>
 

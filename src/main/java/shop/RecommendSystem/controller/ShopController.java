@@ -1,7 +1,5 @@
 package shop.RecommendSystem.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -19,7 +17,6 @@ import shop.RecommendSystem.service.ShopService;
 import shop.RecommendSystem.service.UploadService;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 @Controller
@@ -44,6 +41,8 @@ public class ShopController {
         page = (page < 1) ? 1 : page;
         Long size = 10L;  // 페이지당 아이템 수
         Long offset = (page - 1) * size; // 페이지 번호를 0부터 시작하도록 조정
+
+
         List<Item> items = shopRepository.selectAll(offset, size); // 데이터 조회
 
         Page pageDto = shopService.calPage(page);
@@ -89,39 +88,9 @@ public class ShopController {
     public String insert(@ModelAttribute Item itemForm,
                          @RequestParam("imgFile") MultipartFile file,
                          @RequestParam("palette") String palette,
-                         HttpServletRequest request,
                          RedirectAttributes redirectAttributes) throws IOException {
-        //이미지 특징 추출 후 저장
-        String imgUuid = "";
-        if (!file.isEmpty()) {
-            imgUuid = uploadService.uploadFile(file);
-        }
 
-        // 클라이언트에서 전달 받은 이미지의 대표 색상을 저장
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            int[][] paletteArray = objectMapper.readValue(palette, int[][].class);
-
-            // 5x3 배열 출력
-            for (int[] color : paletteArray) {
-                System.out.println("RGB: " + Arrays.toString(color));
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        //게시물 정보 저장
-        Item item = new Item(
-                itemForm.getItemTitle(),
-                itemForm.getItemContent(),
-                itemForm.getItemPrice(),
-                imgUuid
-        );
-        Long itemId = shopRepository.save(item);
-
-        log.info("= 상품추가 성공 =");
-
-        redirectAttributes.addAttribute("productId", itemId);
+        redirectAttributes.addAttribute("productId", shopService.insertItem(itemForm, file, palette));
         return "redirect:/shop/detail/{productId}";
 
     }

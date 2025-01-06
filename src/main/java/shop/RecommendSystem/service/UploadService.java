@@ -40,14 +40,13 @@ public class UploadService {
 
         ObjectMetadata objMeta = new ObjectMetadata();
         objMeta.setContentLength(file.getInputStream().available());
-
-        String imgUrl = "";
+        objMeta.setContentType(file.getContentType());
 
         try {
             amazonS3.putObject(bucket, uuid, file.getInputStream(), objMeta);
 
             // 등록된 객체의 url 반환 (decoder: url 안의 한글or특수문자 깨짐 방지)
-            imgUrl = (cloudfront + uuid).toString();
+            String imgUrl = (cloudfront + uuid).toString();
 
             String pHash = new ImagePHash().getPHash(imgUrl);
 

@@ -1,5 +1,6 @@
 package shop.RecommendSystem.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
@@ -13,9 +14,10 @@ import java.util.Arrays;
 /*
     https://gist.github.com/kuFEAR/6e20342198d4040e0bb5 참고
  */
+@Slf4j
 public class ImagePHash {
 
-    private static final int SIZE = 64; // DCT를 위한 크기
+    private static final int SIZE = 32; // DCT를 위한 크기
     private static final int SMALL_SIZE = 16; // 해시값을 생성할 크기
 
     public String getPHash(String imgUrl) throws IOException {
@@ -37,25 +39,23 @@ public class ImagePHash {
 
     public String calPHash(BufferedImage img) throws IOException {
 
-        // 0. aws s3 링크를 BufferedImage로 변환
-        /*
-        URL url = new URL(imgUrl);
-        BufferedImage img = ImageIO.read(url);
-
-         */
+        long beforeTime = System.currentTimeMillis();
 
         // 1. 이미지를 흑백으로 변환하고 크기를 SIZE x SIZE로 조정
         BufferedImage resizedImage = resizeAndGrayscale(img, SIZE, SIZE);
+        log.info(" 1. {} ", System.currentTimeMillis() - beforeTime);
 
-        // 2. 이미지의 픽셀값을 DCT 변환
+        // 2. 이미지의 픽셀값을 DCT 변환 <- 가장 큰 병목 구간
         double[][] dctValues = applyDCT(resizedImage);
-
+        log.info(" 2. {} ", System.currentTimeMillis() - beforeTime);
         // 3. 상위 왼쪽 SMALL_SIZE x SMALL_SIZE 부분 추출
+
         double[] topLeftValues = getTopLeft(dctValues, SMALL_SIZE);
+        log.info(" 3. {} ", System.currentTimeMillis() - beforeTime);
 
         // 4. 중간값 계산
         double median = calculateMedian(topLeftValues);
-
+        log.info(" 4. {} ", System.currentTimeMillis() - beforeTime);
         // 5. 평균값을 기준으로 0 또는 1로 변환하여 해시 생성
         return generateHash(topLeftValues, median);
     }
@@ -138,7 +138,8 @@ public class ImagePHash {
         }
     }
 
-    private static String generateHash(double[] values, double average) {
+    private static String generateHash(double[] values, double median) {
+        long beforeTime = System.currentTimeMillis();
         StringBuilder hexHash = new StringBuilder();
         int size = values.length;
         int bitCount = 0;
@@ -147,7 +148,7 @@ public class ImagePHash {
         for (int i = 0; i < size; i++) {
 
             // 현재 비트를 추가
-            hexValue = (hexValue << 1) | (values[i] > average ? 1 : 0);
+            hexValue = (hexValue << 1) | (values[i] > median ? 1 : 0);
             bitCount++;
 
             // 4비트가 쌓이면 16진수 문자로 변환
@@ -162,6 +163,7 @@ public class ImagePHash {
             hexValue = hexValue << (4 - bitCount); // 남은 비트를 왼쪽으로 밀기
             hexHash.append(Integer.toHexString(hexValue));
         }
+        log.info(" 5. {} ", System.currentTimeMillis() - beforeTime);
         return hexHash.toString();
     }
 

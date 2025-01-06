@@ -20,6 +20,9 @@ public class ImageControlLogicService {
 
     public String cropAndResizeImage(String imageUrl, int targetWidth, int targetHeight, int resizeType) throws Exception {
         // S3 URL에서 이미지 다운로드
+
+        log.info("cropAndResizeImage - imageUrl = {}", imageUrl);
+
         URL url = new URL(imageUrl);
         BufferedImage originalImage = ImageIO.read(url);
 
