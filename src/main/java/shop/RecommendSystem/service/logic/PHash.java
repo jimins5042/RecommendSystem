@@ -1,6 +1,7 @@
-package shop.RecommendSystem.service;
+package shop.RecommendSystem.service.logic;
 
 import lombok.extern.slf4j.Slf4j;
+import org.imgscalr.Scalr;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
@@ -15,7 +16,7 @@ import java.util.Arrays;
     https://gist.github.com/kuFEAR/6e20342198d4040e0bb5 참고
  */
 @Slf4j
-public class ImagePHash {
+public class PHash {
 
     private static final int SIZE = 32; // DCT를 위한 크기
     private static final int SMALL_SIZE = 16; // 해시값을 생성할 크기
@@ -61,8 +62,16 @@ public class ImagePHash {
     }
 
     private static BufferedImage resizeAndGrayscale(BufferedImage img, int width, int height) {
-        Image scaledImage = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+
+        BufferedImage scaledImage = Scalr.resize(
+                img,
+                Scalr.Method.SPEED,  // 지정한 품질로 리사이징
+                width, height
+        );
+
+        //Image scaledImage = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
         BufferedImage grayImage = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+
         Graphics2D g2d = grayImage.createGraphics();
         g2d.drawImage(scaledImage, 0, 0, null);
         g2d.dispose();

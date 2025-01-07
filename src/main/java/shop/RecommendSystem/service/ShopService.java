@@ -3,25 +3,17 @@ package shop.RecommendSystem.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.dto.Page;
-import shop.RecommendSystem.repository.ShopRepository;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
+import shop.RecommendSystem.repository.ShopRepository;
+import shop.RecommendSystem.service.logic.ImageProcessing;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Base64;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,8 +24,8 @@ public class ShopService {
     private final UploadService uploadService;
 
     public Long insertItem(Item itemForm,
-                             MultipartFile file,
-                             String palette) throws IOException {
+                           MultipartFile file,
+                           String palette) throws IOException {
         //이미지 특징 추출 후 저장
         String imgUuid = "";
         if (!file.isEmpty()) {
@@ -43,19 +35,28 @@ public class ShopService {
         // 클라이언트에서 전달 받은 이미지의 대표 색상을 저장
         ObjectMapper objectMapper = new ObjectMapper();
 
-            int[][] paletteArray = objectMapper.readValue(palette, int[][].class);
-            if (paletteArray.length > 0) {
-                HashMap<String, String> map = new HashMap<>();
-                map.put("uuid", imgUuid);
-                map.put("tag", "");
-                // 최대 5x3 배열 출력
-                for (int[] color : paletteArray) {
-                    ImageControlLogicService imgCtrl = new ImageControlLogicService();
+        int[][] paletteArray = objectMapper.readValue(palette, int[][].class);
+
+        if (paletteArray.length > 0) {
+            HashMap<String, String> map = new HashMap<>();
+            ArrayList<String> duplicateCheck = new ArrayList<>();
+            map.put("uuid", imgUuid);
+            map.put("tag", "");
+
+            // 최대 5x3 배열 출력
+            for (int[] color : paletteArray) {
+                ImageProcessing imgCtrl = new ImageProcessing();
+                String colorTag = imgCtrl.getNearestColor(color);
+
+                //컬러태그 중복 체크
+                if (!duplicateCheck.contains(colorTag)) {
+                    duplicateCheck.add(colorTag);
                     map.replace("tag", imgCtrl.getNearestColor(color));
                     itemMapper.insertImgColorTag(map);
                 }
-            }
 
+            }
+        }
 
         //게시물 정보 저장
         Item item = new Item(

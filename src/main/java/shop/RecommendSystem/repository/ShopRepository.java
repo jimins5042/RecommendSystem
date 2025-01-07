@@ -7,8 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
-import shop.RecommendSystem.service.ImageControlLogicService;
-import shop.RecommendSystem.service.ImagePHash;
+import shop.RecommendSystem.service.logic.ImageProcessing;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +27,7 @@ public class ShopRepository {
 
     //mapper의 의존관계 구현체를 주입
     private final ItemMapper itemMapper;
-    private final ImageControlLogicService imgctrl;
+    private final ImageProcessing imgCtrl;
 
 
     public long save(Item item) {
@@ -45,7 +44,7 @@ public class ShopRepository {
 
         if(item.getItemImageLink() != null) {
             try {
-                item.setItemImageLink(imgctrl.cropAndResizeImage(item.getItemImageLink(), 600, 600, 0));
+                item.setItemImageLink(imgCtrl.cropAndResizeImage(item.getItemImageLink(), 600, 600, 0));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -85,7 +84,7 @@ public class ShopRepository {
         List<CompletableFuture<Void>> futures = items.stream()
                 .map(item -> CompletableFuture.runAsync(() -> {
                     try {
-                        String url = imgctrl.cropAndResizeImage(item.getItemImageLink(), 400, 300, 1);
+                        String url = imgCtrl.cropAndResizeImage(item.getItemImageLink(), 400, 300, 1);
                         item.setItemImageLink(url);
                     } catch (Exception e) {
                         e.printStackTrace();

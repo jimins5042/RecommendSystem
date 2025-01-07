@@ -5,7 +5,8 @@ import lombok.Setter;
 
 import java.util.Date;
 
-@Getter@Setter
+@Getter
+@Setter
 public class ImageInfo {
 
     int imageId;
@@ -18,6 +19,11 @@ public class ImageInfo {
     Date updatedAt;
 
     public ImageInfo() {
+    }
+
+    public ImageInfo(String imageUuid, String imageHashCode) {
+        this.imageUuid = imageUuid;
+        this.imageHashCode = imageHashCode;
     }
 
     public ImageInfo(String imageUuid, String imageOriginalName, String imageUrl, String imageHashCode) {

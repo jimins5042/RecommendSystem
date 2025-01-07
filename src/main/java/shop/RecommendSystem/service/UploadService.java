@@ -10,11 +10,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import shop.RecommendSystem.dto.ImageInfo;
+import shop.RecommendSystem.service.logic.PHash;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
 
-import java.awt.*;
 import java.io.IOException;
-import java.net.URLDecoder;
 import java.util.UUID;
 
 @Slf4j
@@ -48,7 +47,7 @@ public class UploadService {
             // 등록된 객체의 url 반환 (decoder: url 안의 한글or특수문자 깨짐 방지)
             String imgUrl = (cloudfront + uuid).toString();
 
-            String pHash = new ImagePHash().getPHash(imgUrl);
+            String pHash = new PHash().getPHash(imgUrl);
 
             ImageInfo image = new ImageInfo(uuid, file.getOriginalFilename(), imgUrl, pHash);
 

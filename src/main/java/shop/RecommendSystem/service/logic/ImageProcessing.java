@@ -1,9 +1,8 @@
-package shop.RecommendSystem.service;
+package shop.RecommendSystem.service.logic;
 
 import lombok.extern.slf4j.Slf4j;
-import net.coobird.thumbnailator.Thumbnails;
-import org.springframework.stereotype.Service;
 import org.imgscalr.Scalr;
+import org.springframework.stereotype.Service;
 import shop.RecommendSystem.dto.ColorTag;
 
 import javax.imageio.ImageIO;
@@ -11,12 +10,10 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.net.URL;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Objects;
 
 @Service
 @Slf4j
-public class ImageControlLogicService {
+public class ImageProcessing {
 
     public String cropAndResizeImage(String imageUrl, int targetWidth, int targetHeight, int resizeType) throws Exception {
         // S3 URL에서 이미지 다운로드
@@ -76,7 +73,6 @@ public class ImageControlLogicService {
             if (mean > 235) {
                 return ColorTag.BLACK.name();
             }
-
             return ColorTag.GRAY.name();
         }
 
