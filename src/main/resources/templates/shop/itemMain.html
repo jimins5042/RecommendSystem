@@ -4,7 +4,7 @@
 <head>
     <!-- 헤더 파일 포함 -->
     <head th:replace="fragments/header :: header"/>
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
 
         .card {
@@ -22,7 +22,7 @@
         }
 
         .card-body {
-            height: 100px; /* 카드 본문 높이 */
+            height: 150px; /* 카드 본문 높이 */
             text-align: center;
             padding: 10px;
         }
@@ -58,7 +58,41 @@
         .container {
             position: relative;
         }
+
+
+
+        /* 툴팁 컨테이너 스타일 */
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip-container .tooltip-text {
+            visibility: hidden;
+            width: 300px; /* 툴팁 가로 길이 */
+            height: 180px; /* 툴팁 세로 길이 */
+            background-color: #fff; /* 툴팁 배경색 */
+            color: #333; /* 툴팁 글자색 */
+            text-align: center;
+            border-radius: 12px; /* 카드 스타일에 맞게 둥글게 */
+            padding: 20px;
+            position: absolute;
+            top: calc(100% + 10px); /* 버튼과 툴팁 사이에 10px 간격 추가 */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* 더 부드러운 그림자 */
+            border: 1px solid #ddd; /* 카드와 비슷한 연한 테두리 */
+            opacity: 0; /* 처음에는 보이지 않음 */
+            transition: opacity 0.3s ease; /* 부드러운 전환 효과 */
+        }
+        /* 마우스를 올렸을 때 툴팁 표시 */
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
+
 </head>
 
 <body>
@@ -67,27 +101,57 @@
 <div th:replace="fragments/bodyHeader :: bodyHeader"></div>
 
 <!-- Search Bar -->
-<div class="container mt-4">
-    <form class="d-flex align-items-center">
-        <input class="form-control me-2" type="text" name="query" placeholder="검색어를 입력하세요"
-               aria-label="Search" style="max-width: 400px;">
 
-        <button class="btn btn-outline-dark me-3" type="submit">검색</button>
-    </form>
 
-    <form th:action="@{/search/img}" method="post" enctype="multipart/form-data">
+    <div class="container mt-4">
+        <form class="d-flex align-items-center" th:action="@{/search/img}" method="post" enctype="multipart/form-data">
 
-        <!-- 이미지 업로드 -->
-        <div class="form-group">
-            <label for="imgFile">상품 이미지</label>
-            <input type="file" name="imgFile" id="imgFile" class="form-control-file"
-                   accept="image/*">
-        </div>
+            <input id="searchInput" class="form-control me-2" type="text" name="query" placeholder="검색어를 입력하세요"
+                   aria-label="Search" style="max-width: 400px;">
+            <!-- 파일 선택 input -->
+            <input type="file" name="imgFile" id="imgFile" class="form-control-file d-none" accept="image/*">
 
-        <!-- 제출 버튼 -->
-        <button type="submit" class="btn btn-primary mt-3">등록</button>
-    </form>
-</div>
+            <div class="tooltip-container">
+                <!-- 파일 선택 버튼 -->
+                <button type="button" class="btn btn-outline-dark me-3" id="fileSelectButton">
+                    파일 선택
+                </button>
+                <!-- 툴팁 내용 -->
+                <div class="tooltip-text">
+                    <h5>이미지로 검색하기</h5></br>
+                    이미지 검색으로 원했던 상품을 AliExpress에서 더 나은 가격으로 만나보세요.
+
+                </div>
+            </div>
+
+            <button class="btn btn-outline-dark me-3" type="submit">
+                <img class="icon_1" src="https://cdn.icon-icons.com/icons2/3065/PNG/512/search_magnifier_icon_190940.png"
+                     alt="검색" style="width: 20px; height: 20px; vertical-align: middle;">
+            </button>
+
+        </form>
+    </div>
+    <script>
+        // 파일 선택 버튼과 파일 선택 input 연결
+        const fileSelectButton = document.getElementById('fileSelectButton');
+        const fileInput = document.getElementById('imgFile');
+        const fileNameDisplay = document.getElementById('fileName');
+
+        fileSelectButton.addEventListener('click', () => {
+            fileInput.click(); // 숨겨진 파일 입력 창 열기
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+
+                searchInput.value = fileInput.files[0].name; // 검색어 입력창에 선택한 파일 이름 표시
+            } else {
+
+                searchInput.value = ''; // 파일 선택 취소 시 표시 초기화
+            }
+        });
+
+    </script>
 
 <!-- Section -->
 <section class="py-5" style="margin-top: -100px;" th:if="${items != null}">
@@ -168,12 +232,12 @@
                         <img class="card-img-top img-fluid"
                              th:src="${result.imageUrl != null ? result.imageUrl : '/images/default.jpg'}"
                              th:alt="${result.itemTitle != null ? result.itemTitle : '상품 이미지'}"
-                             loading="lazy" style="max-width: 400px;">
+                             loading="lazy" style="max-width: 400px; max-height: 400px;">
                     </a>
                     <div class="card-body p-4">
                         <div class="text-center">
-                            <h5 class="fw-bolder"
-                                th:text="${result.itemTitle != null ? result.itemTitle : '상품 제목 없음'}"></h5>
+                            <h6 class="fw-bolder"
+                                th:text="${result.itemTitle != null ? result.itemTitle : '상품 제목 없음'}"></h6>
                             <span th:text="${result.itemPrice != null ? result.itemPrice + ' 원' : '가격 없음'}"></span>
                             <br>
                             <span th:text="${result.hammingDistance != null ? '유사도: ' + result.hammingDistance : '유사도 정보 없음'}"></span>

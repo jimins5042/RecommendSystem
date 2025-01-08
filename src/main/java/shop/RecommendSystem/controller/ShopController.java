@@ -104,7 +104,7 @@ public class ShopController {
 
         Item item = shopRepository.findById(id);
         if(item.getHashCode() != null){
-            List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), 5);
+            List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), 8);
             model.addAttribute("results", results);
         }
 

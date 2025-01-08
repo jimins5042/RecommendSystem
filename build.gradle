@@ -32,6 +32,9 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.1.RELEASE'
     implementation group: 'net.coobird', name: 'thumbnailator', version: '0.4.20'
     implementation 'org.imgscalr:imgscalr-lib:4.2'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-devtools'
+
 
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'com.mysql:mysql-connector-j'

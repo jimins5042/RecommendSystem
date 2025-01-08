@@ -65,8 +65,11 @@ public class SearchController {
     }
 
     @PostMapping("/img")
-    public String insert(@RequestParam("imgFile") MultipartFile file, Model model) throws IOException {
+    public String insert(
+            @RequestParam("query") String query,
+            @RequestParam("imgFile") MultipartFile file, Model model) throws IOException {
 
+        log.info("query: " + query);
         List<SearchResult> results = searchService.searchSimilarItems(new PHash().getPHash(file), 10);
         model.addAttribute("results", results);
 
