@@ -13,17 +13,49 @@
     .container {
         position: relative;
     }
+
+    /* 코드 1 전용 스타일 */
+    #scrollWrapper {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: 10px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #scrollLeft, #scrollRight {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        background: #f1f1f1;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+    }
+
+    #scrollLeft {
+        left: -20px;
+    }
+
+    #scrollRight {
+        right: -20px;
+    }
+
 </style>
 
 <body>
 <div th:replace="~{fragments/bodyHeader :: bodyHeader}"/>
 
 <div class="container" style="margin-top: 100px; margin-bottom: 100px;">
-
     <div class="row" style="display: flex; align-items: center;">
+        <!-- 왼쪽 화면 -->
         <div class="col-md-6">
-            <!-- 이미지를 화면 왼쪽에 배치 -->
-            <div class="product-image">
+            <div class="product-image" style="text-align: center;"> <!-- 이미지 오른쪽 정렬 -->
                 <div th:if="${item.itemImageLink}">
                     <img th:src="${item.itemImageLink}" th:alt="${item.itemTitle}" loading="lazy" class="img-fluid"
                          style="max-width: 400px;">
@@ -34,6 +66,7 @@
             </div>
         </div>
 
+        <!-- 오른쪽 화면 -->
         <div class="col-md-6">
             <div class="product-info">
                 <h3 th:text="${item.itemTitle}"></h3>
@@ -66,7 +99,8 @@
             </div>
         </div>
     </div>
-    <section class="py-5" style="margin-top: 10px;">
+
+    <section class="py-5" style="margin-top: 10px;" th:if="${results != null}">
         <div class="container px-4 px-lg-5 mt-5">
             <div class="py-5 text-center">
                 <h4>📢 현재 보시는 상품과 시각적으로 유사한 상품들이에요 📢</h4>
@@ -75,10 +109,15 @@
             <!-- 버튼과 가로 스크롤을 위한 래퍼 -->
             <div style="position: relative; padding: 10px;">
                 <!-- 왼쪽 버튼 -->
-                <button id="scrollLeft" style="position: absolute; top: 50%; left: -20px; transform: translateY(-50%); z-index: 10; background: #f1f1f1; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0px 2px 5px rgba(0,0,0,0.2); cursor: pointer;">&#8249;</button>
+                <button id="scrollLeft"
+                        style="position: absolute; top: 50%; left: -20px; transform: translateY(-50%); z-index: 10; background: #f1f1f1; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0px 2px 5px rgba(0,0,0,0.2); cursor: pointer;">
+                    &#8249;
+                </button>
 
-                <div id="scrollWrapper" style="overflow-x: auto; white-space: nowrap; padding: 10px; -webkit-overflow-scrolling: touch;">
+                <div id="scrollWrapper"
+                     style="overflow-x: auto; white-space: nowrap; padding: 10px; -webkit-overflow-scrolling: touch;">
                     <div style="display: inline-flex; gap: 1rem;">
+
                         <!-- Thymeleaf loop for products -->
                         <div class="card h-100" th:each="result : ${results}" style="width: 250px; flex: 0 0 auto;">
                             <a th:href="@{/shop/detail/{itemId}(itemId=${result.itemId})}">
@@ -101,11 +140,13 @@
                 </div>
 
                 <!-- 오른쪽 버튼 -->
-                <button id="scrollRight" style="position: absolute; top: 50%; right: -20px; transform: translateY(-50%); z-index: 10; background: #f1f1f1; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0px 2px 5px rgba(0,0,0,0.2); cursor: pointer;">&#8250;</button>
+                <button id="scrollRight"
+                        style="position: absolute; top: 50%; right: -20px; transform: translateY(-50%); z-index: 10; background: #f1f1f1; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0px 2px 5px rgba(0,0,0,0.2); cursor: pointer;">
+                    &#8250;
+                </button>
             </div>
         </div>
     </section>
-
 
     <br>
     <div th:replace="~{fragments/footer :: footer}"/>

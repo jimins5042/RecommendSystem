@@ -6,6 +6,7 @@
     <head th:replace="fragments/header :: header"/>
 
     <style>
+
         .card {
             width: 100%;
             /*height: 400px;*/
@@ -26,11 +27,6 @@
             padding: 10px;
         }
 
-        .card-body {
-            height: 100px; /* 카드 본문 높이 */
-            text-align: center;
-            padding: 10px;
-        }
 
         .pagination {
             display: flex;
@@ -75,12 +71,26 @@
     <form class="d-flex align-items-center">
         <input class="form-control me-2" type="text" name="query" placeholder="검색어를 입력하세요"
                aria-label="Search" style="max-width: 400px;">
+
         <button class="btn btn-outline-dark me-3" type="submit">검색</button>
+    </form>
+
+    <form th:action="@{/search/img}" method="post" enctype="multipart/form-data">
+
+        <!-- 이미지 업로드 -->
+        <div class="form-group">
+            <label for="imgFile">상품 이미지</label>
+            <input type="file" name="imgFile" id="imgFile" class="form-control-file"
+                   accept="image/*">
+        </div>
+
+        <!-- 제출 버튼 -->
+        <button type="submit" class="btn btn-primary mt-3">등록</button>
     </form>
 </div>
 
 <!-- Section -->
-<section class="py-5" style="margin-top: -100px;">
+<section class="py-5" style="margin-top: -100px;" th:if="${items != null}">
     <div class="container px-4 px-lg-5 mt-5">
         <div class="py-5 text-center">
             <h2>오늘의 추천 상품</h2>
@@ -140,6 +150,37 @@
         <!-- More button -->
         <div class="text-sm-end">
             <a class="btn btn-outline-dark mt-auto" href="/list">더보기</a>
+        </div>
+    </div>
+</section>
+
+<section class="py-5" style="margin-top: 10px;" th:if="${results != null}">
+    <div class="container px-4 px-lg-5 mt-5">
+        <div class="py-5 text-center">
+
+            <h4>📢 현재 보시는 상품과 시각적으로 유사한 상품들이에요 📢</h4>
+        </div>
+        <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
+
+            <div class="col mb-5" th:each="result : ${results}">
+                <div class="card h-100">
+                    <a th:href="@{/shop/detail/{itemId}(itemId=${result.itemId})}">
+                        <img class="card-img-top img-fluid"
+                             th:src="${result.imageUrl != null ? result.imageUrl : '/images/default.jpg'}"
+                             th:alt="${result.itemTitle != null ? result.itemTitle : '상품 이미지'}"
+                             loading="lazy" style="max-width: 400px;">
+                    </a>
+                    <div class="card-body p-4">
+                        <div class="text-center">
+                            <h5 class="fw-bolder"
+                                th:text="${result.itemTitle != null ? result.itemTitle : '상품 제목 없음'}"></h5>
+                            <span th:text="${result.itemPrice != null ? result.itemPrice + ' 원' : '가격 없음'}"></span>
+                            <br>
+                            <span th:text="${result.hammingDistance != null ? '유사도: ' + result.hammingDistance : '유사도 정보 없음'}"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>

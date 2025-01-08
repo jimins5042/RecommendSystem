@@ -9,7 +9,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import shop.RecommendSystem.dto.SearchResult;
-import shop.RecommendSystem.repository.mapper.SearchMapper;
 import shop.RecommendSystem.service.SearchService;
 import shop.RecommendSystem.service.logic.ImageProcessing;
 import shop.RecommendSystem.service.logic.PHash;
@@ -30,7 +29,7 @@ public class SearchController {
 
     @GetMapping("/findImg")
     public String findImg(Model model) {
-        return "/search/TestSearchForm";
+        return "search/TestSearchForm";
     }
 
     @PostMapping("/findImg")
@@ -62,6 +61,16 @@ public class SearchController {
         response.put("nearestColor", nearestColor);
 
         return response;
+
+    }
+
+    @PostMapping("/img")
+    public String insert(@RequestParam("imgFile") MultipartFile file, Model model) throws IOException {
+
+        List<SearchResult> results = searchService.searchSimilarItems(new PHash().getPHash(file), 10);
+        model.addAttribute("results", results);
+
+        return "shop/itemMain";  // 템플릿 파일 경로
 
     }
 

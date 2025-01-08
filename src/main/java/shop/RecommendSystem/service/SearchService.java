@@ -25,7 +25,7 @@ public class SearchService {
     private final LSHService lshService;
     private final SearchMapper searchMapper;
 
-    public List<SearchResult> searchSimilarItems(String hashValue, int resultSize){
+    public List<SearchResult> searchSimilarItems(String hashValue, int resultSize) {
 
         HashMap<String, Double> map = lshService.searchLSH(hashValue);
 
@@ -34,7 +34,11 @@ public class SearchService {
         keySet.sort((o1, o2) -> map.get(o1).compareTo(map.get(o2)));
 
         //LSH에서 탐색한 상품 후보군 중, 유사도가 높은 상위 {resultSize}개의 상품 정보를 가져옴
-        List<SearchResult> results = searchMapper.findItemCandidates(keySet.subList(0, resultSize));
+        List<SearchResult> results = searchMapper.
+                findItemCandidates(
+                        //만약 resultSize가 상품 후보군의 전체 수보다 크다면 -> 전체 상품 정보 가져옴
+                        keySet.subList(0, (resultSize > keySet.size()) ? keySet.size() : resultSize)
+                );
 
         ExecutorService executor = Executors.newFixedThreadPool(10); // 최대 10개의 스레드를 사용
         List<CompletableFuture<Void>> futures = results.stream()

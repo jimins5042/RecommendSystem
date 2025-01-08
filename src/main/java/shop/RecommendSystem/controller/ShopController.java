@@ -12,8 +12,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.dto.Page;
 import shop.RecommendSystem.dto.SearchResult;
-import shop.RecommendSystem.repository.mapper.ItemMapper;
 import shop.RecommendSystem.repository.ShopRepository;
+import shop.RecommendSystem.repository.mapper.ItemMapper;
 import shop.RecommendSystem.service.SearchService;
 import shop.RecommendSystem.service.ShopService;
 import shop.RecommendSystem.service.UploadService;
@@ -54,7 +54,7 @@ public class ShopController {
         model.addAttribute("items", items);
         model.addAttribute("pageDto", pageDto);
 
-        return "/shop/itemList";  // 템플릿 파일 경로
+        return "shop/itemList";  // 템플릿 파일 경로
     }
 
     @GetMapping("/main")
@@ -77,14 +77,14 @@ public class ShopController {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return "/shop/itemMain";  // 템플릿 파일 경로
+        return "shop/itemMain";  // 템플릿 파일 경로
     }
 
     @GetMapping("/addItem")
     public String insertItem(Model model) {
 
         model.addAttribute("itemForm", new Item());
-        return "/shop/insertItem";
+        return "shop/insertItem";
     }
 
     @PostMapping("/addItem")
@@ -94,7 +94,7 @@ public class ShopController {
                          RedirectAttributes redirectAttributes) throws IOException {
 
         redirectAttributes.addAttribute("productId", shopService.insertItem(itemForm, file, palette));
-        return "redirect:/shop/detail/{productId}";
+        return "redirect:shop/detail/{productId}";
 
     }
 
@@ -103,19 +103,22 @@ public class ShopController {
         log.info("=== 이미지 상세 조회 ===");
 
         Item item = shopRepository.findById(id);
+        if(item.getHashCode() != null){
+            List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), 5);
+            model.addAttribute("results", results);
+        }
 
-        List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), 5);
 
         model.addAttribute("item", item);
-        model.addAttribute("results", results);
 
-        return "/shop/showItem";
+
+        return "shop/showItem";
     }
 
     @GetMapping("/delete/{id}")
     public String deleteItem(@PathVariable("id") Long id, Model model) {
         shopRepository.deleteItem(id);
 
-        return "/shop/itemList";
+        return "shop/itemList";
     }
 }
