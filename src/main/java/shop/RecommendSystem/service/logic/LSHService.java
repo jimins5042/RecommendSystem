@@ -36,25 +36,26 @@ public class LSHService {
     public HashMap searchLSH(String hashValue) {
         // StringBuilder 생성
         StringBuilder sb = new StringBuilder(hashValue);
-        ArrayList<String> duplicateCheck = new ArrayList<>();
+        HashSet<String> duplicateCheck = new HashSet<>();
         HashMap<String, Double> candidates = new HashMap<>();
-
+        String hashValue16 = new java.math.BigInteger(hashValue, 16).toString(2);
         for (int i = 0; i <= hashValue.length() - windowSize; i++) {
             // 슬라이딩 윈도우로 문자열 추출
             String key = sb.substring(i, i + windowSize);
-            if (!duplicateCheck.contains(key)) {
 
-                duplicateCheck.add(key);
+            // 이미 탐색한 버킷키가 아니고, 존재하는 버킷키일 경우
+            if (!duplicateCheck.contains(key) && lshBuckets.containsKey(key)) {
 
-                if (lshBuckets.containsKey(key)) {
-                    for (ImageInfo image : lshBuckets.get(key)) {
-                        Double hammingDistance = calHammingDistance(hashValue, image.getImageHashCode());
+                for (ImageInfo image : lshBuckets.get(key)) {
+                    Double hammingDistance = calHammingDistance(hashValue16, image.getImageHashCode());
+
+                    //유사도가 60% 미만인 상품은 후보군에서 제외
+                    //if (hammingDistance <= 0.4) {
                         candidates.put(image.getImageUuid(), hammingDistance);
-                        log.info("candidates : {}", candidates.get(image.getImageUuid()));
-                    }
+                    //}
                 }
-
             }
+            duplicateCheck.add(key);
         }
 
         return candidates;
@@ -62,15 +63,16 @@ public class LSHService {
 
     public double calHammingDistance(String a, String b) {
 
+        String binary = new java.math.BigInteger(b, 16).toString(2);
+
         long hammingDistance = 0;
 
-        for (int i = 0; i < a.length(); i++) {
-            if (a.charAt(i) != b.charAt(i)) {
+        for (int i = 0; i < binary.length(); i++) {
+            if (a.charAt(i) != binary.charAt(i)) {
                 hammingDistance++;
             }
         }
-
-        return hammingDistance;
+        return (double) hammingDistance / binary.length();
     }
 
 

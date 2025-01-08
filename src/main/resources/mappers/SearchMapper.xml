@@ -4,53 +4,28 @@
 <!--ItemMapper의 위치를 적어줌-->
 <mapper namespace="shop.RecommendSystem.repository.mapper.SearchMapper">
 
-
     <!--글 상세 보기-->
     <select id="findSearchTarget" resultType="ImageInfo">
         SELECT image_uuid,
                image_hash_code
         FROM image_info
     </select>
-    <!--글 목록 및 글 관리-->
-    <select id="findAll" resultType="Item" parameterType="Map">
-        SELECT item_id,
-               item_title,
-               item_date
-        FROM shop_board
-        ORDER BY item_id desc
-            LIMIT #{offset}, #{size}
-    </select>
 
-    <select id="findThumbnailAll" resultType="Item" parameterType="Map">
-        SELECT s.item_id,
-               s.item_title,
-               s.item_price,
-               i.image_url as item_image_link
-        FROM shop_board as s
-                 LEFT JOIN
-             image_info AS i
-             ON
-                 s.item_image_link = i.image_uuid
-        where s.item_image_link is not null
-            LIMIT #{offset}
-            , #{size}
+    <!-- SELECT 쿼리 -->
+    <select id="findItemCandidates" parameterType="list" resultType="SearchResult">
+        SELECT
+        s.item_id, s.item_title, s.item_price, i.image_url, i.image_uuid
+        FROM
+        shop_board AS s
+        LEFT JOIN
+        image_info AS i
+        ON
+        s.item_image_link = i.image_uuid
+        WHERE
+        i.image_uuid IN
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
     </select>
-
-    <select id="countItems" resultType="long">
-        SELECT COUNT(*)
-        FROM shop_board
-    </select>
-
-    <delete id="delete" parameterType="Long">
-        DELETE
-        s, i, c
-            FROM shop_board AS s
-            LEFT JOIN image_info AS i
-                ON s.item_image_link = i.image_uuid
-            LEFT JOIN image_color_tag AS c
-                ON s.item_image_link = c.image_color_uuid
-            WHERE s.item_id =
-        #{id};
-    </delete>
 
 </mapper>

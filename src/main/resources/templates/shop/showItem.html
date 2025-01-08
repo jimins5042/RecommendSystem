@@ -3,6 +3,18 @@
 
 <head th:replace="~{fragments/header :: header}"/>
 
+<style>
+
+    tr:hover {
+        background-color: #f1f1f1;
+        cursor: pointer;
+    }
+
+    .container {
+        position: relative;
+    }
+</style>
+
 <body>
 <div th:replace="~{fragments/bodyHeader :: bodyHeader}"/>
 
@@ -54,6 +66,46 @@
             </div>
         </div>
     </div>
+    <section class="py-5" style="margin-top: 10px;">
+        <div class="container px-4 px-lg-5 mt-5">
+            <div class="py-5 text-center">
+                <h4>📢 현재 보시는 상품과 시각적으로 유사한 상품들이에요 📢</h4>
+            </div>
+
+            <!-- 버튼과 가로 스크롤을 위한 래퍼 -->
+            <div style="position: relative; padding: 10px;">
+                <!-- 왼쪽 버튼 -->
+                <button id="scrollLeft" style="position: absolute; top: 50%; left: -20px; transform: translateY(-50%); z-index: 10; background: #f1f1f1; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0px 2px 5px rgba(0,0,0,0.2); cursor: pointer;">&#8249;</button>
+
+                <div id="scrollWrapper" style="overflow-x: auto; white-space: nowrap; padding: 10px; -webkit-overflow-scrolling: touch;">
+                    <div style="display: inline-flex; gap: 1rem;">
+                        <!-- Thymeleaf loop for products -->
+                        <div class="card h-100" th:each="result : ${results}" style="width: 250px; flex: 0 0 auto;">
+                            <a th:href="@{/shop/detail/{itemId}(itemId=${result.itemId})}">
+                                <img class="card-img-top img-fluid"
+                                     th:src="${result.imageUrl != null ? result.imageUrl : '/images/default.jpg'}"
+                                     th:alt="${result.itemTitle != null ? result.itemTitle : '상품 이미지'}"
+                                     loading="lazy" style="max-width: 100%; height: auto;">
+                            </a>
+                            <div class="card-body p-4">
+                                <div class="text-center">
+                                    <h5 class="fw-bolder"
+                                        th:text="${result.itemTitle != null ? result.itemTitle : '상품 제목 없음'}"></h5>
+                                    <span th:text="${result.itemPrice != null ? result.itemPrice + ' 원' : '가격 없음'}"></span>
+                                    <br>
+                                    <span th:text="${result.hammingDistance != null ? '유사도: ' + result.hammingDistance : '유사도 정보 없음'}"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 오른쪽 버튼 -->
+                <button id="scrollRight" style="position: absolute; top: 50%; right: -20px; transform: translateY(-50%); z-index: 10; background: #f1f1f1; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0px 2px 5px rgba(0,0,0,0.2); cursor: pointer;">&#8250;</button>
+            </div>
+        </div>
+    </section>
+
 
     <br>
     <div th:replace="~{fragments/footer :: footer}"/>
@@ -70,6 +122,30 @@
     function sendImageToServer() {
         window.location.href = '/shop/itemList';
     }
+
+
+    const scrollWrapper = document.getElementById('scrollWrapper');
+    const scrollLeft = document.getElementById('scrollLeft');
+    const scrollRight = document.getElementById('scrollRight');
+
+    // 스크롤 이동 거리
+    const scrollDistance = 300;
+
+    // 왼쪽 버튼 클릭 시
+    scrollLeft.addEventListener('click', () => {
+        scrollWrapper.scrollBy({
+            left: -scrollDistance,
+            behavior: 'smooth'
+        });
+    });
+
+    // 오른쪽 버튼 클릭 시
+    scrollRight.addEventListener('click', () => {
+        scrollWrapper.scrollBy({
+            left: scrollDistance,
+            behavior: 'smooth'
+        });
+    });
 </script>
 
 </body>

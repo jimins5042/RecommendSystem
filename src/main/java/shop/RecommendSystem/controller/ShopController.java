@@ -11,8 +11,10 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.dto.Page;
+import shop.RecommendSystem.dto.SearchResult;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
 import shop.RecommendSystem.repository.ShopRepository;
+import shop.RecommendSystem.service.SearchService;
 import shop.RecommendSystem.service.ShopService;
 import shop.RecommendSystem.service.UploadService;
 
@@ -30,6 +32,7 @@ public class ShopController {
     private final UploadService uploadService;
     private final ShopRepository shopRepository;
     private final ShopService shopService;
+    private final SearchService searchService;
     private final ItemMapper itemMapper;
 
     @GetMapping("/itemList")
@@ -101,7 +104,10 @@ public class ShopController {
 
         Item item = shopRepository.findById(id);
 
+        List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), 5);
+
         model.addAttribute("item", item);
+        model.addAttribute("results", results);
 
         return "/shop/showItem";
     }

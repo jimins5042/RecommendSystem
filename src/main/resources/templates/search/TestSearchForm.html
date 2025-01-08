@@ -245,6 +245,36 @@
             document.getElementById('nearestColor').textContent = data.nearestColor;
             document.getElementById('time').textContent = "소요 시간 : "+ data.runTime + "ms";
 
+
+            // 서버에서 받은 items로 제품 목록을 동적으로 생성
+            const productList = document.getElementById("productList");
+            productList.classList.remove("hide");  // 숨겨진 제품 목록을 보이게 함
+
+            // 기존 목록 비우기
+            productList.innerHTML = '';
+
+            // 서버에서 받은 items 배열을 사용하여 제품 목록 생성
+            data.items.forEach(item => {
+                const productDiv = document.createElement('div');
+                productDiv.classList.add('col', 'mb-5');
+
+                productDiv.innerHTML = `
+                        <div class="card h-100">
+                            <a href="/shop/detail/${item.itemId}">
+                                <img class="card-img-top" src="${item.imageUrl}" alt="${item.itemTitle}" loading="lazy" class="img-fluid" style="max-width: 400px;">
+                            </a>
+                            <div class="card-body p-4">
+                                <div class="text-center">
+                                    <h5 class="fw-bolder">${item.itemTitle}</h5>
+                                    <span>${item.itemPrice} 원</span> <br>
+                                    <span>유사도 : ${item.hammingDistance}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                productList.appendChild(productDiv);
+            });
+
         } else {
             alert('Image upload failed');
         }

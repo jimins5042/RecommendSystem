@@ -18,7 +18,7 @@ import java.util.Arrays;
 @Slf4j
 public class PHash {
 
-    private static final int SIZE = 32; // DCT를 위한 크기
+    private static final int SIZE = 64; // DCT를 위한 크기
     private static final int SMALL_SIZE = 16; // 해시값을 생성할 크기
 
     public String getPHash(String imgUrl) throws IOException {
