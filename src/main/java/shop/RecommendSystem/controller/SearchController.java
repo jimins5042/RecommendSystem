@@ -64,6 +64,7 @@ public class SearchController {
 
     }
 
+
     @PostMapping("/img")
     public String insert(
             @RequestParam("query") String query,

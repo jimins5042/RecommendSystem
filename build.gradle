@@ -34,6 +34,7 @@ dependencies {
     implementation 'org.imgscalr:imgscalr-lib:4.2'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-devtools'
+    implementation 'org.openpnp:opencv:4.7.0-0' // 최신 버전으로 교체
 
 
     compileOnly 'org.projectlombok:lombok'

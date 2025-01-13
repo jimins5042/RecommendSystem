@@ -1,12 +1,14 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="~{fragments/header :: header}"/>
+<head th:insert="~{fragments/header :: header}">
+    <title id="page_title">글 작성 페이지</title>
+</head>
 
 <body>
 <div class="container mt-5">
 
-    <div th:replace="~{fragments/bodyHeader :: bodyHeader}"/>
+    <div th:insert="~{fragments/bodyHeader :: bodyHeader}"/>
 
     <h1>상품 등록</h1>
 
@@ -50,7 +52,7 @@
 
     <br>
     <br>
-    <div th:replace="~{fragments/footer :: footer}"/>
+    <div th:insert="~{fragments/footer :: footer}"/>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
 <script>

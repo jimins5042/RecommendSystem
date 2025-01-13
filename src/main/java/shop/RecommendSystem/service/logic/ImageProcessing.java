@@ -78,6 +78,9 @@ public class ImageProcessing {
 
         double minDist = Double.MAX_VALUE;
         for (ColorTag color : ColorTag.values()) {
+            if(color.name().equals(ColorTag.GRAY.name())) {
+                continue;
+            }
             int[] colorValue = color.getRgb();
             double curDist = Math.sqrt(
                     Math.pow(rgb[0] - colorValue[0], 2) + // Red 차이

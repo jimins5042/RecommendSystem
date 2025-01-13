@@ -2,8 +2,10 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
-    <!-- 헤더 파일 포함 -->
-    <head th:replace="~{fragments/header :: header}"/>
+    <!-- 헤더 파일 포함 -->    <!-- 헤더 파일 포함 -->
+    <head th:insert="~{fragments/header :: header}">
+        <title id="page_title">관리자 페이지</title>
+    </head>
 
     <style>
 
@@ -43,7 +45,7 @@
 </head>
 
 <body>
-<div th:replace="~{fragments/bodyHeader :: bodyHeader}"/>
+<div th:insert="~{fragments/bodyHeader :: bodyHeader}"/>
 <div class="container">
     <!-- 바디 헤더 포함 -->
 
@@ -115,7 +117,7 @@
 
     <br>
     <!-- 푸터 포함 -->
-    <div th:replace="~{fragments/footer :: footer}"/>
+    <div th:insert="~{fragments/footer :: footer}"/>
 </div> <!-- /container -->
 
 </body>

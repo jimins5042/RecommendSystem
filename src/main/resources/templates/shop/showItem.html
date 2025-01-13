@@ -1,7 +1,9 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="~{fragments/header :: header}"/>
+<head th:insert="~{fragments/header :: header}">
+    <title id="page_title">글 상세 보기</title>
+</head>
 
 <style>
 
@@ -49,7 +51,7 @@
 </style>
 
 <body>
-<div th:replace="~{fragments/bodyHeader :: bodyHeader}"/>
+<div th:insert="~{fragments/bodyHeader :: bodyHeader}"/>
 
 <div class="container" style="margin-top: 100px; margin-bottom: 100px;">
     <div class="row" style="display: flex; align-items: center;">
@@ -149,7 +151,7 @@
     </section>
 
     <br>
-    <div th:replace="~{fragments/footer :: footer}"/>
+    <div th:insert="~{fragments/footer :: footer}"/>
 </div>
 
 <div class="col-6 text-left">
@@ -163,7 +165,6 @@
     function sendImageToServer() {
         window.location.href = '/shop/itemList';
     }
-
 
     const scrollWrapper = document.getElementById('scrollWrapper');
     const scrollLeft = document.getElementById('scrollLeft');

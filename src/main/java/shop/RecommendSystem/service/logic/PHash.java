@@ -130,6 +130,7 @@ public class PHash {
     }
 
     private static double calculateMedian(double[] values) {
+
         int totalElements = values.length;
 
         double[] flattened = new double[totalElements];

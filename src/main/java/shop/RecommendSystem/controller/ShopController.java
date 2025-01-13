@@ -14,6 +14,7 @@ import shop.RecommendSystem.dto.Page;
 import shop.RecommendSystem.dto.SearchResult;
 import shop.RecommendSystem.repository.ShopRepository;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
+import shop.RecommendSystem.repository.mapper.SearchMapper;
 import shop.RecommendSystem.service.SearchService;
 import shop.RecommendSystem.service.ShopService;
 import shop.RecommendSystem.service.UploadService;
@@ -34,6 +35,7 @@ public class ShopController {
     private final ShopService shopService;
     private final SearchService searchService;
     private final ItemMapper itemMapper;
+    private final SearchMapper searchMapper;
 
     @GetMapping("/itemList")
     public String shopItemList(
@@ -104,13 +106,12 @@ public class ShopController {
 
         Item item = shopRepository.findById(id);
         if(item.getHashCode() != null){
+
             List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), 8);
             model.addAttribute("results", results);
         }
 
-
         model.addAttribute("item", item);
-
 
         return "shop/showItem";
     }
