@@ -1,4 +1,4 @@
-package shop.RecommendSystem.controller;
+package shop.RecommendSystem.service.logic;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.pattern.OpenCV;
@@ -6,44 +6,30 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.features2d.ORB;
 import org.opencv.imgcodecs.Imgcodecs;
-import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+@Service
 @Slf4j
-@Controller
-
-public class ImageController {
-
+public class ImageFeature {
     static {
         // OpenCV 라이브러리 로드
         //System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         OpenCV.loadLocally();
     }
 
-    @PostMapping("/testORB")
-    @ResponseBody
-    public ResponseEntity<Object> uploadImage(@RequestParam("image") MultipartFile file,
-                                              @RequestParam("rgb") String palette) throws IOException {
+    public String getImageFeature(MultipartFile file) throws IOException {
 
         log.info("Uploading image");
-
-        if (file.isEmpty()) {
-            log.info("File is empty");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("파일이 비어 있습니다.");
-        }
 
         long beforeTime = System.currentTimeMillis();
 
@@ -63,8 +49,9 @@ public class ImageController {
 
         printActiveBits(hexBitFlag);
 
-        return ResponseEntity.ok("true");
+        return hexBitFlag;
     }
+
 
     // 상위 N개의 특징점을 16진수로 인코딩
     private String encodeFeaturesAsHex(List<Double> keySet, int topN) {
@@ -160,5 +147,4 @@ public class ImageController {
 
         return binaryString.toString();
     }
-
 }
