@@ -2,6 +2,7 @@ package shop.RecommendSystem.service.logic;
 
 import lombok.extern.slf4j.Slf4j;
 import org.imgscalr.Scalr;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
@@ -15,6 +16,7 @@ import java.util.Arrays;
 /*
     https://gist.github.com/kuFEAR/6e20342198d4040e0bb5 참고
  */
+
 @Slf4j
 public class PHash {
 

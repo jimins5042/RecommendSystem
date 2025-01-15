@@ -14,6 +14,7 @@ public class ImageInfo {
     String imageOriginalName;
     String imageUrl;
     String imageHashCode;
+    String imgFeatureValue;
     String imagePhashV1;
     Date createdAt;
     Date updatedAt;
@@ -31,6 +32,12 @@ public class ImageInfo {
         this.imageOriginalName = imageOriginalName;
         this.imageUrl = imageUrl;
         this.imageHashCode = imageHashCode;
+    }
+
+    public ImageInfo(String imageUuid, String imageUrl, String imgFeatureValue) {
+        this.imageUuid = imageUuid;
+        this.imageUrl = imageUrl;
+        this.imgFeatureValue = imgFeatureValue;
     }
 
     public ImageInfo(int imageId, String imageUuid, String imageOriginalName, String imageUrl, String imageHashCode, String imagePhashV1, Date createdAt, Date updatedAt) {

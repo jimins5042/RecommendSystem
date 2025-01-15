@@ -23,7 +23,7 @@ public class LSHService {
     //프로젝트 시작시 실행
     //@PostConstruct
     public void initializeLSH() {
-        ArrayList<ImageInfo> images = searchMapper.findSearchTarget();
+        ArrayList<ImageInfo> images = searchMapper.findSearchLSHTarget();
 
         //객체 안에는 imageUuid, imageHashCode가 존재
         for (ImageInfo image : images) {
@@ -49,9 +49,9 @@ public class LSHService {
                     Double hammingDistance = calHammingDistance(hashValue16, image.getImageHashCode());
 
                     //유사도가 60% 미만인 상품은 후보군에서 제외
-                    //if (hammingDistance <= 0.4) {
-                    candidates.put(image.getImageUuid(), hammingDistance);
-                    //}
+                    if (hammingDistance <= 0.4) {
+                        candidates.put(image.getImageUuid(), hammingDistance);
+                    }
                 }
             }
             duplicateCheck.add(key);

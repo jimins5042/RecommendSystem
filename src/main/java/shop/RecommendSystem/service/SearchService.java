@@ -5,13 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import shop.RecommendSystem.dto.SearchResult;
 import shop.RecommendSystem.repository.mapper.SearchMapper;
-import shop.RecommendSystem.service.logic.ImageProcessing;
 import shop.RecommendSystem.service.logic.LSHService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,7 +20,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SearchService {
 
-    private final ImageProcessing imgCtrl;
     private final LSHService lshService;
     private final SearchMapper searchMapper;
 
@@ -35,6 +32,7 @@ public class SearchService {
         //해밍 거리를 기준으로 내림차 정렬
         ArrayList<String> keySet = new ArrayList<>(map.keySet());
         keySet.sort((o1, o2) -> map.get(o1).compareTo(map.get(o2)));
+
 
         //LSH에서 탐색한 상품 후보군 중, 유사도가 높은 상위 {resultSize}개의 상품 정보를 가져옴
         List<SearchResult> results = searchMapper

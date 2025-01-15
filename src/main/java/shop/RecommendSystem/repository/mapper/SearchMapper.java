@@ -11,7 +11,8 @@ import java.util.Map;
 
 @Mapper
 public interface SearchMapper {
-    ArrayList<ImageInfo> findSearchTarget();
+    ArrayList<ImageInfo> findSearchLSHTarget();
+    ArrayList<ImageInfo> findSearchBitMaskTarget();
 
     List<SearchResult> findItemCandidates(List<String> keySet);
 
@@ -20,5 +21,9 @@ public interface SearchMapper {
 
     String findImageColorTag(String imageColorUuid);
     String findImageColorTagByuuid(String imageColorUuid);
+
+    ArrayList<ImageInfo> findUpdateTarget();
+    void updatePHash(Map<String, String> map);
+
 
 }

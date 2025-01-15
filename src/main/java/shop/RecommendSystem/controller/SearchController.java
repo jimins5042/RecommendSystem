@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import shop.RecommendSystem.dto.SearchResult;
 import shop.RecommendSystem.service.SearchService;
+import shop.RecommendSystem.service.logic.BitMaskSearch;
+import shop.RecommendSystem.service.logic.ImageFeature;
 import shop.RecommendSystem.service.logic.ImageProcessing;
 import shop.RecommendSystem.service.logic.PHash;
 
@@ -26,6 +28,7 @@ public class SearchController {
 
     private final ImageProcessing imgCtrl;
     private final SearchService searchService;
+    private final BitMaskSearch bitMaskSearch;
 
     @GetMapping("/findImg")
     public String findImg(Model model) {
@@ -50,6 +53,43 @@ public class SearchController {
             response.put("hashValue", hashValue);
             response.put("runTime", String.valueOf(System.currentTimeMillis() - beforeTime));
             response.put("items", results);
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        int[] paletteArray = objectMapper.readValue(palette, int[].class);
+        String nearestColor = imgCtrl.getNearestColor(paletteArray);
+
+        log.info("nearestColor: " + nearestColor);
+
+        response.put("nearestColor", nearestColor);
+
+        return response;
+
+    }
+
+    @PostMapping("/findImgFeature")
+    @ResponseBody
+    public Map<String, Object> findImgFeature(@RequestParam("image") MultipartFile file,
+                                              @RequestParam("rgb") String palette) throws IOException {
+        //이미지 특징 추출 후 저장
+        Map<String, Object> response = new HashMap<>();
+
+        if (!file.isEmpty()) {
+
+            ImageFeature imageFeature = new ImageFeature();
+            long beforeTime = System.currentTimeMillis();
+
+            List<Double> list = imageFeature.getImageFeature(file);
+            bitMaskSearch.searchBitMask(list);
+
+            String hashValue = imageFeature.encodeFeaturesAsHex(list);
+            log.info("hashValue: " + hashValue);
+
+
+
+            response.put("hashValue", hashValue);
+            response.put("runTime", String.valueOf(System.currentTimeMillis() - beforeTime));
+
         }
 
         ObjectMapper objectMapper = new ObjectMapper();

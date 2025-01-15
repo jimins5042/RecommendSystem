@@ -5,9 +5,15 @@
 <mapper namespace="shop.RecommendSystem.repository.mapper.SearchMapper">
 
     <!--글 상세 보기-->
-    <select id="findSearchTarget" resultType="ImageInfo">
+    <select id="findSearchLSHTarget" resultType="ImageInfo">
         SELECT image_uuid,
                image_hash_code
+        FROM image_info
+    </select>
+
+    <select id="findSearchBitMaskTarget" resultType="ImageInfo">
+        SELECT image_uuid,
+               img_feature_value as image_hash_code
         FROM image_info
     </select>
 
@@ -64,5 +70,13 @@
         <id property="image_color_uuid" column="image_color_uuid"/>
         <result property="color_tags" column="color_tags"/>
     </resultMap>
+
+    <update id="updatePHash" parameterType="Map">
+
+        UPDATE image_info
+        set img_feature_value = #{hash}
+        where image_uuid = #{uuid}
+
+    </update>
 
 </mapper>
