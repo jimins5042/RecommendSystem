@@ -80,16 +80,17 @@ public class SearchController {
             long beforeTime = System.currentTimeMillis();
 
             List<Double> list = imageFeature.getImageFeature(file);
-            bitMaskSearch.searchBitMask(list);
-
             String hashValue = imageFeature.encodeFeaturesAsHex(list);
-            log.info("hashValue: " + hashValue);
 
+            HashMap<String, Double> map = bitMaskSearch.searchBitMask(list, hashValue);
+            List<SearchResult> results = searchService.searchSimilarItems1(map, 10);
+
+            log.info("hashValue: " + hashValue);
 
 
             response.put("hashValue", hashValue);
             response.put("runTime", String.valueOf(System.currentTimeMillis() - beforeTime));
-
+            response.put("items", results);
         }
 
         ObjectMapper objectMapper = new ObjectMapper();

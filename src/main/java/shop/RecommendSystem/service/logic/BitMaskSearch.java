@@ -30,7 +30,7 @@ public class BitMaskSearch {
         log.info("=== Bitmask TreeMap initialized ===");
     }
 
-    public String searchBitMask(List<Double> targetBitFlagList) {
+    public HashMap<String, Double> searchBitMask(List<Double> targetBitFlagList, String targetBitMask) {
         long beforeTime = System.currentTimeMillis();
         TreeMap<String, String> copyTree = new TreeMap<>(bitmaskTree);
 
@@ -38,52 +38,50 @@ public class BitMaskSearch {
         byte[] bitSet = new byte[32];
         for (Double targetBitFlag : targetBitFlagList) {
 
+            // 2. 찾고자 하는 특징점의 위치를 bitset에 저장
             bitSet = encodeFeaturesAsHex(targetBitFlag, bitSet);
             String targetHex = binaryToHex(bitSet);
 
-            // 2. targetHex 이상의 값들만 필터링
+            // 3. targetHex 이상의 값들만 필터링
             SortedMap<String, String> sortTree = copyTree.tailMap(targetHex);  // targetHex보다 큰 값을 선택
 
-            // 3. TreeMap에서 조건에 맞는 키 검색
+            // 4. TreeMap에서 조건에 맞는 키 검색
             TreeMap<String, String> filteredTree = new TreeMap<>();
             for (Map.Entry<String, String> entry : sortTree.entrySet()) {
                 String key = entry.getKey();
 
-                // 키와 targetHex의 비트 연산 확인
+                //and 비트 연산을 통해 해당 특징점을 보유하고 있는지 확인
                 if (checkBitCondition(key, targetHex)) {
                     filteredTree.put(key, entry.getValue());
                 }
             }
 
-            // 4. 필터링된 TreeMap으로 갱신
+            // 5. 필터링된 TreeMap으로 갱신
             copyTree = filteredTree;
 
-            // 5. 리스트 크기가 100 미만이면 루프 종료
-            if (copyTree.size() < 100) {
+            // 6. 리스트 크기가 100 미만이면 루프 종료
+            if (copyTree.size() < 300) {
                 break;
             }
         }
 
-        Collection<String> keys = copyTree.values();
-        log.info("=== Bitmask TreeMap search ===. {} ", System.currentTimeMillis() - beforeTime);
+        //Collection<String> keys = copyTree.values();
+        Collection<String> keys = copyTree.keySet();
+
+
+        HashMap<String, Double> similarityMap = new HashMap<>();
 
         for (String key : keys) {
-            log.info("bitmask : {}", key);
+            double similarity = calJaccardSimilarity(targetBitMask, key);
+            similarityMap.put(copyTree.get(key), similarity);
+
+            log.info("bitmask : {}, similarity : {}", copyTree.get(key), similarity);
         }
-
-        return "";
+        log.info("=== Bitmask TreeMap search ===. {} ", System.currentTimeMillis() - beforeTime);
+        return similarityMap;
     }
 
-    private boolean checkBitCondition(String keyHex, String targetHex) {
-        // 16진수 문자열을 BigInteger로 변환
-        BigInteger key = new BigInteger(keyHex, 16);
-        BigInteger target = new BigInteger(targetHex, 16);
-
-        // 비트 연산 조건 확인
-        return key.and(target).equals(target);
-    }
-
-    // 비트를 16진수로 변환하기 위한 함수
+    //2. 찾고자 하는 특징점의 위치를 bitset에 저장
     private byte[] encodeFeaturesAsHex(Double key, byte[] bitSet) {
         int index = key.intValue(); // 특징점 값을 인덱스로 사용
         if (index < 256) { // 유효한 범위 내에서만 처리
@@ -97,7 +95,10 @@ public class BitMaskSearch {
         return bitSet;
     }
 
-    // 바이트 배열을 16진수 문자열로 변환
+    /*
+        2. 찾고자 하는 특징점의 위치를 bitset에 저장
+        - 비트 플래그를 16진수로 변환하기 위한 함수
+     */
     public String binaryToHex(byte[] bitSet) {
         StringBuilder hexString = new StringBuilder();
         for (byte b : bitSet) {
@@ -106,4 +107,34 @@ public class BitMaskSearch {
         return hexString.toString();
     }
 
+
+    // 4. TreeMap에서 조건에 맞는 키 검색
+    private boolean checkBitCondition(String keyHex, String targetHex) {
+        // 16진수 문자열을 BigInteger로 변환
+        BigInteger key = new BigInteger(keyHex, 16);
+        BigInteger target = new BigInteger(targetHex, 16);
+
+        // 비트 연산 조건 확인
+        return key.and(target).equals(target);
+    }
+
+
+    public double calJaccardSimilarity(String keyHex, String targetHex) {
+        // 16진수 문자열을 BigInteger로 변환
+        BigInteger key = new BigInteger(keyHex, 16);
+        BigInteger target = new BigInteger(targetHex, 16);
+
+        // 교집합
+        int intersection = key.and(target).bitCount();
+
+        //대칭 차집합
+        int symmetricDifference = key.xor(target).bitCount();
+
+        /*
+            자카드 유사도
+            = 교집합 / 합집합
+            = 교집합 / (대칭 차집합 + 교집합)
+         */
+        return 1- (intersection / (double) (symmetricDifference + intersection));
+    }
 }

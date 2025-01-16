@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import shop.RecommendSystem.dto.ImageInfo;
 import shop.RecommendSystem.repository.mapper.SearchMapper;
 
+import java.math.BigInteger;
 import java.util.*;
 
 @Service
@@ -36,7 +37,7 @@ public class LSHService {
         StringBuilder sb = new StringBuilder(hashValue);
         HashSet<String> duplicateCheck = new HashSet<>();
         HashMap<String, Double> candidates = new HashMap<>();
-        String hashValue16 = new java.math.BigInteger(hashValue, 16).toString(2);
+
         for (int i = 0; i <= hashValue.length() - windowSize; i++) {
             // 슬라이딩 윈도우로 문자열 추출
             String key = sb.substring(i, i + windowSize);
@@ -45,7 +46,7 @@ public class LSHService {
             if (!duplicateCheck.contains(key) && lshBuckets.containsKey(key)) {
 
                 for (ImageInfo image : lshBuckets.get(key)) {
-                    Double hammingDistance = calHammingDistance(hashValue16, image.getImageHashCode());
+                    Double hammingDistance = calHammingDistance(hashValue, image.getImageHashCode());
 
                     //유사도가 60% 미만인 상품은 후보군에서 제외
                     if (hammingDistance <= 0.4) {
@@ -94,61 +95,14 @@ public class LSHService {
         }
     }
 
-    public double calHammingDistance(String a, String b) {
+    public double calHammingDistance(String keyHex, String targetHex) {
+        // 16진수 문자열을 BigInteger로 변환
+        BigInteger key = new BigInteger(keyHex, 16);
+        BigInteger target = new BigInteger(targetHex, 16);
+        //대칭 차집합
+        int symmetricDifference = key.xor(target).bitCount();
 
-        String binary = new java.math.BigInteger(b, 16).toString(2);
-
-        long hammingDistance = 0;
-
-        for (int i = 0; i < binary.length(); i++) {
-            if (a.charAt(i) != binary.charAt(i)) {
-                hammingDistance++;
-            }
-        }
-        return (double) hammingDistance / binary.length();
-    }
-
-
-    public double calJaccardSimilarity(Set<String> a, Set<String> b) {
-        // 원본 집합을 보존하기 위해 복사본을 사용
-        Set<String> intersection = new HashSet<>(a);
-        Set<String> union = new HashSet<>(a);
-
-        // 교집합 계산
-        intersection.retainAll(b);
-
-        // 합집합 계산
-        union.addAll(b);
-
-        // 자카드 유사도 계산
-        if (union.size() == 0) {
-            return 0.0; // 합집합이 비어 있을 경우 0 반환
-        }
-
-        return (double) intersection.size() / union.size();
-    }
-
-
-    public double calJaccardSimilarity(String aarr, String barr) {
-
-        Set<String> a = new HashSet<>(Arrays.asList(aarr.split(",")));
-        Set<String> b = new HashSet<>(Arrays.asList(barr.split(",")));
-
-        Set<String> intersection = new HashSet<>(a);
-        Set<String> union = new HashSet<>(a);
-
-        // 교집합 계산
-        intersection.retainAll(b);
-
-        // 합집합 계산
-        union.addAll(b);
-
-        // 자카드 유사도 계산
-        if (union.size() == 0) {
-            return 0.0; // 합집합이 비어 있을 경우 0 반환
-        }
-
-        return (double) intersection.size() / union.size();
+        return (double) symmetricDifference / target.bitLength();
     }
 
 }

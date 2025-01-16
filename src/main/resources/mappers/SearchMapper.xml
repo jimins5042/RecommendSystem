@@ -34,6 +34,7 @@
         </foreach>
     </select>
 
+
     <select id="findImageColorTag" parameterType="String" resultType="String">
         SELECT GROUP_CONCAT(color_tag SEPARATOR ',') AS color_tags
         FROM image_color_tag
