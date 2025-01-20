@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import shop.RecommendSystem.dto.ImageInfo;
-import shop.RecommendSystem.service.logic.PHash;
+import shop.RecommendSystem.recommend.ImageFeature.PHash;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
 
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package shop.RecommendSystem.service.logic;
+package shop.RecommendSystem.recommend.ItemFiltering;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -60,7 +60,7 @@ public class BitMaskSearch {
             copyTree = filteredTree;
 
             // 6. 리스트 크기가 100 미만이면 루프 종료
-            if (copyTree.size() < 300) {
+            if (copyTree.size() < 200) {
                 break;
             }
         }
@@ -131,10 +131,21 @@ public class BitMaskSearch {
         int symmetricDifference = key.xor(target).bitCount();
 
         /*
-            자카드 유사도
+            자카드 유사도 공식
             = 교집합 / 합집합
             = 교집합 / (대칭 차집합 + 교집합)
          */
         return 1- (intersection / (double) (symmetricDifference + intersection));
+    }
+
+
+    public double calJaccardSimilarity1(String keyHex, String targetHex) {
+        // 16진수 문자열을 BigInteger로 변환
+        BigInteger key = new BigInteger(keyHex, 16);
+        BigInteger target = new BigInteger(targetHex, 16);
+        //대칭 차집합
+        int symmetricDifference = key.xor(target).bitCount();
+
+        return (double) symmetricDifference / target.bitLength();
     }
 }

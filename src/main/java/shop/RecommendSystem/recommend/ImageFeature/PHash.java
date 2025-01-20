@@ -1,4 +1,4 @@
-package shop.RecommendSystem.service.logic;
+package shop.RecommendSystem.recommend.ImageFeature;
 
 import lombok.extern.slf4j.Slf4j;
 import org.imgscalr.Scalr;

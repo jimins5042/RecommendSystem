@@ -80,4 +80,13 @@
 
     </update>
 
+    <select id="findSearchUpdateTarget" resultType="ImageInfo">
+        SELECT image_uuid,
+               image_original_name,
+               image_url,
+               img_feature_value as image_hash_code
+        FROM image_info
+    </select>
+
+
 </mapper>

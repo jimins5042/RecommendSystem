@@ -1,4 +1,4 @@
-package shop.RecommendSystem.service.logic;
+package shop.RecommendSystem.recommend.ImageFeature;
 
 import lombok.extern.slf4j.Slf4j;
 import nu.pattern.OpenCV;
@@ -10,19 +10,21 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-public class ImageFeature {
+public class ExtractByORB {
     static {
         // OpenCV 라이브러리 로드
         OpenCV.loadLocally();
@@ -33,7 +35,10 @@ public class ImageFeature {
         }));
     }
 
-    private final ORB orb = ORB.create();
+    private final HashFunction rowHashFunction = Hashing.murmur3_32(); // 행 해싱용
+    private final HashFunction finalHashFunction = Hashing.sha256(); // 최종 해싱용
+    private final ORB orb = ORB.create(256, 1.2f, 8);
+
 
     public List<Double> getImageFeature(String imgUrl) throws IOException {
         List<Double> bitFlagList = new ArrayList<>();
@@ -50,6 +55,7 @@ public class ImageFeature {
             // BufferedImage를 Mat 객체로 변환
             Mat image = bufferedImageToMat(img);
             log.info("Image size: {}", image.size());
+
             bitFlagList = extractDescriptors(image);
 
 
@@ -61,6 +67,7 @@ public class ImageFeature {
     }
 
     public List<Double> getImageFeature(MultipartFile file) throws IOException {
+    //public String getImageFeature(MultipartFile file) throws IOException {
 
         log.info("Uploading image");
 
@@ -68,9 +75,14 @@ public class ImageFeature {
         InputStream inputStream = file.getInputStream();
 
         // InputStream을 Mat으로 변환
-        Mat image = Imgcodecs.imdecode(new org.opencv.core.MatOfByte(inputStream.readAllBytes()), Imgcodecs.IMREAD_GRAYSCALE);
+        //Mat image = Imgcodecs.imdecode(new org.opencv.core.MatOfByte(inputStream.readAllBytes()), Imgcodecs.IMREAD_GRAYSCALE);
+
+        BufferedImage img = ImageIO.read(inputStream);
+        Mat image = bufferedImageToMat(img);
+
         // ORB 알고리즘으로 특징점 추출
-        List<Double> bitFlagList = extractDescriptors(image);
+        //String bitFlagList = extractDescriptors(image);
+        List<Double> bitFlagList= extractDescriptors(image);
 
         log.info("특징점 추출 끝. {}ms", System.currentTimeMillis() - beforeTime);
 
@@ -117,7 +129,69 @@ public class ImageFeature {
         return hexString.toString();
     }
 
-    // 특징점 추출 메서드
+    private String extractDescriptorsv2(Mat image) throws IOException {
+        if (image.empty()) {
+            throw new IOException("Image could not be loaded or is empty.");
+        }
+
+        MatOfKeyPoint keyPoints = new MatOfKeyPoint();
+        Mat descriptors = new Mat();
+
+        try {
+            // 특징점 검출 및 디스크립터 추출
+            orb.detectAndCompute(image, new Mat(), keyPoints, descriptors);
+
+            if (keyPoints.empty()) {
+                log.info("No keypoints detected");
+                return "0";
+            }
+
+            // 디스크립터 평균 계산
+            double sum = 0;
+            int count = 0;
+            for (int i = 0; i < descriptors.rows(); i++) {
+                double[] row = descriptors.get(i, 0); // 한 행의 디스크립터 가져오기
+                for (double value : row) {
+                    if (value != 0) {
+                        sum += value;
+                        count++;
+                    }
+                }
+            }
+            double mean = sum / count;
+
+            // 이진화된 디스크립터 저장
+            byte[][] binaryDescriptors = new byte[descriptors.rows()][descriptors.cols()];
+
+            for (int i = 0; i < descriptors.rows(); i++) {
+                // 한 행의 디스크립터 가져오기
+                double[] row = descriptors.get(i, 0);
+
+                for (int j = 0; j < row.length; j++) {
+                    // 이진화 처리
+                    binaryDescriptors[i][j] = (byte) ((row[j] < mean) ? 0 : 1);
+                }
+            }
+            // 각 행에 대해 해시 계산 후 결합
+            StringBuilder intermediateHashes = new StringBuilder();
+
+            for (byte[] row : binaryDescriptors) {
+                // 바이트 배열을 문자열로 변환하여 해싱
+                String rowHash = rowHashFunction.hashBytes(row).toString();
+                intermediateHashes.append(rowHash); // 중간 해시 값 결합
+            }
+
+            // 결합된 해시를 최종적으로 SHA-256으로 해싱
+            return finalHashFunction.hashString(intermediateHashes.toString(), java.nio.charset.StandardCharsets.UTF_8).toString();
+
+        } finally {
+            // 리소스 해제
+            image.release();
+            keyPoints.release();
+            descriptors.release();
+        }
+    }
+
     private List<Double> extractDescriptors(Mat image) throws IOException {
         //ORB orb = ORB.create();
         MatOfKeyPoint keyPoints = new MatOfKeyPoint();
@@ -135,13 +209,23 @@ public class ImageFeature {
             } else {
                 // 설명자 추출
                 Mat descriptors = new Mat();
+                HashMap<Double, Long> descriptorsFrequencyMap = new HashMap<>();
                 try {
                     orb.compute(image, keyPoints, descriptors);
 
                     for (int i = 0; i < descriptors.rows(); i++) {
                         for (int j = 0; j < descriptors.cols(); j++) {
-                            double value = descriptors.get(i, j)[0];
-                            descriptorsMap.put(value, descriptorsMap.getOrDefault(value, 0L) + 1);
+
+                            for (Double d : descriptors.get(i, j)) {
+
+                                descriptorsFrequencyMap.put(d, descriptorsMap.getOrDefault(d, 0L) + 1);
+                            }
+
+                            List<Double> keySet = new ArrayList<>(descriptorsFrequencyMap.keySet());
+                            keySet.sort((o1, o2) -> descriptorsMap.get(o2).compareTo(descriptorsMap.get(o1)));
+
+                            descriptorsMap.put(keySet.get(0), descriptorsMap.getOrDefault(keySet.get(0), 0L) + 1);
+                            descriptorsFrequencyMap.clear();
                         }
                     }
                 } finally {
@@ -159,6 +243,7 @@ public class ImageFeature {
         return keySet.subList(0, 25);
 
     }
+
 
     // 16진수 문자열을 2진수 문자열로 변환
     public static void printActiveBits(String hexString) {
@@ -187,5 +272,6 @@ public class ImageFeature {
         }
 
         return binaryString.toString();
+
     }
 }

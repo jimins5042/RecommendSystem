@@ -1,4 +1,4 @@
-package shop.RecommendSystem.service.logic;
+package shop.RecommendSystem.recommend.ItemFiltering;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

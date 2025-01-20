@@ -9,7 +9,6 @@ import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.dto.Page;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
 import shop.RecommendSystem.repository.ShopRepository;
-import shop.RecommendSystem.service.logic.ImageProcessing;
 
 import java.io.IOException;
 import java.util.ArrayList;

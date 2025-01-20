@@ -16,13 +16,7 @@ public interface SearchMapper {
 
     List<SearchResult> findItemCandidates(List<String> keySet);
 
-
-    Map<String, String> findImageColorTags(List<String> imageColorUuids);
-
-    String findImageColorTag(String imageColorUuid);
-    String findImageColorTagByuuid(String imageColorUuid);
-
-    ArrayList<ImageInfo> findUpdateTarget();
+    ArrayList<ImageInfo> findSearchUpdateTarget();
     void updatePHash(Map<String, String> map);
 
 

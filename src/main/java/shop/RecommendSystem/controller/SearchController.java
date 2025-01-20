@@ -9,11 +9,11 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import shop.RecommendSystem.dto.SearchResult;
+import shop.RecommendSystem.recommend.ImageFeature.ExtractByORB;
+import shop.RecommendSystem.recommend.ImageFeature.PHash;
+import shop.RecommendSystem.recommend.ItemFiltering.BitMaskSearch;
+import shop.RecommendSystem.service.ImageProcessing;
 import shop.RecommendSystem.service.SearchService;
-import shop.RecommendSystem.service.logic.BitMaskSearch;
-import shop.RecommendSystem.service.logic.ImageFeature;
-import shop.RecommendSystem.service.logic.ImageProcessing;
-import shop.RecommendSystem.service.logic.PHash;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -29,6 +29,7 @@ public class SearchController {
     private final ImageProcessing imgCtrl;
     private final SearchService searchService;
     private final BitMaskSearch bitMaskSearch;
+
 
     @GetMapping("/findImg")
     public String findImg(Model model) {
@@ -48,6 +49,7 @@ public class SearchController {
 
             String hashValue = new PHash().getPHash(file);
             log.info("hashValue: " + hashValue);
+
             List<SearchResult> results = searchService.searchSimilarItems(hashValue, 10);
 
             response.put("hashValue", hashValue);
@@ -76,14 +78,17 @@ public class SearchController {
 
         if (!file.isEmpty()) {
 
-            ImageFeature imageFeature = new ImageFeature();
+            ExtractByORB extractByORB = new ExtractByORB();
             long beforeTime = System.currentTimeMillis();
 
-            List<Double> list = imageFeature.getImageFeature(file);
-            String hashValue = imageFeature.encodeFeaturesAsHex(list);
+            List<Double> list = extractByORB.getImageFeature(file);
+            String hashValue = extractByORB.encodeFeaturesAsHex(list);
+
+
+            //String hashValue = extractByORB.getImageFeature(file);
 
             HashMap<String, Double> map = bitMaskSearch.searchBitMask(list, hashValue);
-            List<SearchResult> results = searchService.searchSimilarItems1(map, 10);
+            List<SearchResult> results = searchService.searchSimilarItems(map, 10);
 
             log.info("hashValue: " + hashValue);
 
@@ -112,11 +117,11 @@ public class SearchController {
             @RequestParam("imgFile") MultipartFile file, Model model) throws IOException {
 
         log.info("query: " + query);
+
         List<SearchResult> results = searchService.searchSimilarItems(new PHash().getPHash(file), 10);
         model.addAttribute("results", results);
 
         return "shop/itemMain";  // 템플릿 파일 경로
-
     }
 
 
