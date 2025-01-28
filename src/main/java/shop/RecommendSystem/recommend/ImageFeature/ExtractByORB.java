@@ -1,5 +1,6 @@
 package shop.RecommendSystem.recommend.ImageFeature;
 
+import info.debatty.java.lsh.MinHash;
 import lombok.extern.slf4j.Slf4j;
 import nu.pattern.OpenCV;
 import org.opencv.core.CvType;
@@ -22,12 +23,14 @@ import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
 @Service
 @Slf4j
 public class ExtractByORB {
     static {
         // OpenCV 라이브러리 로드
         OpenCV.loadLocally();
+        log.info("OpenCV loaded");
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Shutdown Hook: Cleaning OpenCV resources");
@@ -40,8 +43,8 @@ public class ExtractByORB {
     private final ORB orb = ORB.create(256, 1.2f, 8);
 
 
-    public List<Double> getImageFeature(String imgUrl) throws IOException {
-        List<Double> bitFlagList = new ArrayList<>();
+    public String getImageFeature(String imgUrl) throws IOException {
+        String bitFlagList = new String();
         try {
             log.info("Downloading image from URL: {}", imgUrl);
 
@@ -66,8 +69,7 @@ public class ExtractByORB {
         return bitFlagList;
     }
 
-    public List<Double> getImageFeature(MultipartFile file) throws IOException {
-    //public String getImageFeature(MultipartFile file) throws IOException {
+    public String getImageFeature(MultipartFile file) throws IOException {
 
         log.info("Uploading image");
 
@@ -81,8 +83,7 @@ public class ExtractByORB {
         Mat image = bufferedImageToMat(img);
 
         // ORB 알고리즘으로 특징점 추출
-        //String bitFlagList = extractDescriptors(image);
-        List<Double> bitFlagList= extractDescriptors(image);
+        String bitFlagList = extractDescriptors(image);
 
         log.info("특징점 추출 끝. {}ms", System.currentTimeMillis() - beforeTime);
 
@@ -129,7 +130,8 @@ public class ExtractByORB {
         return hexString.toString();
     }
 
-    private String extractDescriptorsv2(Mat image) throws IOException {
+
+    private String extractDescriptors(Mat image) throws IOException {
         if (image.empty()) {
             throw new IOException("Image could not be loaded or is empty.");
         }
@@ -161,29 +163,44 @@ public class ExtractByORB {
             double mean = sum / count;
 
             // 이진화된 디스크립터 저장
-            byte[][] binaryDescriptors = new byte[descriptors.rows()][descriptors.cols()];
-
+            StringBuilder sb = new StringBuilder();
+            byte[] binaryDescriptors = new byte[descriptors.rows() * descriptors.cols()];
+            int l = 0;
             for (int i = 0; i < descriptors.rows(); i++) {
                 // 한 행의 디스크립터 가져오기
                 double[] row = descriptors.get(i, 0);
 
                 for (int j = 0; j < row.length; j++) {
                     // 이진화 처리
-                    binaryDescriptors[i][j] = (byte) ((row[j] < mean) ? 0 : 1);
+                    sb.append((row[j] < mean) ? 0 : 1);
+                    //binaryDescriptors[l++] = (byte) ((row[j] < mean) ? 0 : 1);
                 }
             }
-            // 각 행에 대해 해시 계산 후 결합
-            StringBuilder intermediateHashes = new StringBuilder();
+            TreeSet<Integer> set1 = binaryToSet("0100111000110110000101110111000000101101110101001100011010000000111000101001100110000011111001010001010001010100000011000000001010100001110000111100000110100000000110110010101111011100110000000101001100011011101011101");
+            TreeSet<Integer> set2 = binaryToSet("0000001100000100110001001000110010010010010110100001000001001001011100010111001100100000110101011111110100000111011001000000000101111000001000000010100001001011001100000101110000000110101110101010110101100000");
 
-            for (byte[] row : binaryDescriptors) {
-                // 바이트 배열을 문자열로 변환하여 해싱
-                String rowHash = rowHashFunction.hashBytes(row).toString();
-                intermediateHashes.append(rowHash); // 중간 해시 값 결합
+            // 전체 유니버스 크기를 동일하게 설정
+            int universeSize = Math.max(set1.last() + 1, set2.last() + 1); // 가장 큰 인덱스 + 1
+
+            // MinHash 초기화 (동일한 유니버스 크기 사용)
+
+            int[] arr = {64, 128, 192, 256};
+            for (int i : arr) {
+                MinHash minHash = new MinHash(i, set1.size(), 123456);
+                MinHash minHash2 = new MinHash(i, set2.size(), 123456);
+
+                // MinHash 서명 생성
+                int[] signature1 = minHash.signature(set1);
+                int[] signature2 = minHash2.signature(set2);
+
+                // 유사도 계산
+                double similarity = minHash.similarity(signature1, signature2);
+
+                System.out.println("Signature similarity: " + similarity);
             }
 
-            // 결합된 해시를 최종적으로 SHA-256으로 해싱
-            return finalHashFunction.hashString(intermediateHashes.toString(), java.nio.charset.StandardCharsets.UTF_8).toString();
 
+            return sb.toString();
         } finally {
             // 리소스 해제
             image.release();
@@ -192,86 +209,14 @@ public class ExtractByORB {
         }
     }
 
-    private List<Double> extractDescriptors(Mat image) throws IOException {
-        //ORB orb = ORB.create();
-        MatOfKeyPoint keyPoints = new MatOfKeyPoint();
-        HashMap<Double, Long> descriptorsMap = new HashMap<>();
-        if (image.empty()) {
-            throw new IOException("Image could not be loaded or is empty.");
-        }
-
-        try {
-            // 특징점 검출
-            orb.detect(image, keyPoints);
-
-            if (keyPoints.empty()) {
-                log.info("No keypoints detected");
-            } else {
-                // 설명자 추출
-                Mat descriptors = new Mat();
-                HashMap<Double, Long> descriptorsFrequencyMap = new HashMap<>();
-                try {
-                    orb.compute(image, keyPoints, descriptors);
-
-                    for (int i = 0; i < descriptors.rows(); i++) {
-                        for (int j = 0; j < descriptors.cols(); j++) {
-
-                            for (Double d : descriptors.get(i, j)) {
-
-                                descriptorsFrequencyMap.put(d, descriptorsMap.getOrDefault(d, 0L) + 1);
-                            }
-
-                            List<Double> keySet = new ArrayList<>(descriptorsFrequencyMap.keySet());
-                            keySet.sort((o1, o2) -> descriptorsMap.get(o2).compareTo(descriptorsMap.get(o1)));
-
-                            descriptorsMap.put(keySet.get(0), descriptorsMap.getOrDefault(keySet.get(0), 0L) + 1);
-                            descriptorsFrequencyMap.clear();
-                        }
-                    }
-                } finally {
-                    descriptors.release(); // Mat 객체 해제
-                }
-            }
-        } finally {
-            image.release(); // Mat 객체 해제
-            keyPoints.release(); // MatOfKeyPoint 해제
-        }
-
-        // 특징점의 갯수 순으로 정렬 및 상위 25개 추출
-        List<Double> keySet = new ArrayList<>(descriptorsMap.keySet());
-        keySet.sort((o1, o2) -> descriptorsMap.get(o2).compareTo(descriptorsMap.get(o1)));
-        return keySet.subList(0, 25);
-
-    }
-
-
-    // 16진수 문자열을 2진수 문자열로 변환
-    public static void printActiveBits(String hexString) {
-
-        String binaryString = hexToBinary(hexString);
-
-        System.out.println("활성화된 비트의 인덱스:");
-
-        // 2진수 문자열을 순회하여 활성화된 비트(1인 비트)의 인덱스를 출력
-        for (int i = 0; i < binaryString.length(); i++) {
-            if (binaryString.charAt(i) == '1') {
-                System.out.println("비트 " + i + "이(가) 활성화되었습니다.");
+    private static TreeSet<Integer> binaryToSet(String binaryFeature) {
+        TreeSet<Integer> set = new TreeSet<>();
+        for (int i = 0; i < binaryFeature.length(); i++) {
+            if (binaryFeature.charAt(i) == '1') {
+                set.add(i); // 1의 위치를 추가
             }
         }
+        return set;
     }
 
-    // 16진수 문자열을 2진수 문자열로 변환하는 메서드
-    public static String hexToBinary(String hexString) {
-        StringBuilder binaryString = new StringBuilder();
-
-        // 16진수 문자열의 각 문자를 4비트 이진수로 변환
-        for (int i = 0; i < hexString.length(); i++) {
-            String binary = String.format("%4s", Integer.toBinaryString(Integer.parseInt(String.valueOf(hexString.charAt(i)), 16)))
-                    .replace(' ', '0'); // 4자리 이진수로 맞추기
-            binaryString.append(binary);
-        }
-
-        return binaryString.toString();
-
-    }
 }

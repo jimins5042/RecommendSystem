@@ -78,7 +78,45 @@
         width: 100%;
     }
 
+    .tooltip-container {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        margin-right: 10px; /* 버튼 간 간격 */
+    }
 
+    .button-container {
+        display: flex; /* Flexbox로 정렬 */
+        justify-content: center;
+        align-items: center;
+        gap: 20px; /* 버튼 간격 조정 */
+    }
+
+    .tooltip-text {
+        visibility: hidden;
+        width: 300px;
+        height: 180px;
+        background-color: #fff;
+        color: #333;
+        text-align: center;
+        border-radius: 12px;
+        padding: 20px;
+        position: absolute;
+        top: calc(100% + 10px);
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border: 1px solid #ddd;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .tooltip-container:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
@@ -110,14 +148,45 @@
     <div class="col-auto text-center">
         <form id="uploadForm" method="POST" enctype="multipart/form-data">
             <!-- 파일 선택 버튼 -->
-            <!--label for="fileInput" class="btn btn-primary">파일 선택</label-->
-            <button type="button" class="btn btn-primary" id="fileSelectButton">파일 선택</button>
-            <input type="file" id="fileInput" accept="image/*" style="display:none" />
+            <div class="button-container">
+                <div class="tooltip-container">
 
-            <!-- 해시 계산 버튼 -->
+                    <button type="button" class="btn btn-primary" id="fileSelectButton">파일 선택</button>
+                    <input type="file" id="fileInput" accept="image/*" style="display:none"/>
+                    <div class="tooltip-text">
+                        <h5>이미지로 검색하기</h5>
+                        </br>
+                        상단의 빈 캔버스를 눌러도 이미지를 업로드할 수 있습니다.
+                    </div>
+                </div>
 
-            <button type="button" class="btn btn-warning" onclick="submitForm('/search/findImg')">해시값 계산</button>
-            <button type="button" class="btn btn-warning" onclick="submitForm('/search/findImgFeature')">특징점 계산</button>
+                <div class="tooltip-container">
+                    <button type="button" class="btn btn-warning" onclick="submitForm('/search/findImg')">해시값 계산
+                    </button>
+                    <div class="tooltip-text">
+                        <h5>이미지로 검색하기</h5>
+                        </br>
+                        pHash를 이용한 유사 이미지 검색
+                    </div>
+                </div>
+
+                <div class="tooltip-container">
+                    <button type="button" class="btn btn-warning" onclick="submitForm('/search/findImgFeature')">특징점
+                        계산
+                    </button>
+                    <div class="tooltip-text">
+                        <h5>이미지로 검색하기</h5>
+                        </br>
+                        ORB 알고리즘을 이용한 유사 객체 검색 (구현 중)
+                    </div>
+
+                </div>
+
+                <button type="button" class="btn btn-warning" onclick="submitForm('/search/findImgFeatureLSH')">특징점
+                    계산 LSH
+                </button>
+            </div>
+
         </form>
     </div>
 </div>
@@ -239,7 +308,7 @@
             const data = await response.json();
             document.getElementById('hashcode').innerHTML = formatHashValue(data.hashValue);
             document.getElementById('nearestColor').textContent = data.nearestColor;
-            document.getElementById('time').textContent = "소요 시간 : "+ data.runTime + "ms";
+            document.getElementById('time').textContent = "소요 시간 : " + data.runTime + "ms";
 
 
             // 서버에서 받은 items로 제품 목록을 동적으로 생성

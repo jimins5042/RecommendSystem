@@ -8,6 +8,7 @@ import shop.RecommendSystem.repository.mapper.SearchMapper;
 import shop.RecommendSystem.recommend.ItemFiltering.LSHService;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -35,13 +36,18 @@ public class SearchService {
         //해밍 거리를 기준으로 내림차 정렬
         ArrayList<String> keySet = new ArrayList<>(map.keySet());
         keySet.sort((o1, o2) -> map.get(o1).compareTo(map.get(o2)));
+        List<SearchResult> results = new ArrayList<>();
+
+        if(keySet.size() < 1){
+            return results;
+        }
 
         //LSH에서 탐색한 상품 후보군 중, 유사도가 높은 상위 {resultSize}개의 상품 정보를 가져옴
-        List<SearchResult> results = searchMapper
+        results = searchMapper
                 .findItemCandidates(
                         //만약 resultSize가 상품 후보군의 전체 수보다 크다면 -> 전체 상품 정보 가져옴
-                        keySet.subList(0, (resultSize > keySet.size()) ? keySet.size() : resultSize)
-                        //keySet.subList(0, keySet.size())
+                        //keySet.subList(0, (resultSize > keySet.size()) ? keySet.size() : resultSize)
+                        keySet.subList(0, keySet.size())
                 );
 
         ExecutorService executor = Executors.newFixedThreadPool(10); // 최대 10개의 스레드를 사용
@@ -49,7 +55,8 @@ public class SearchService {
                 .map(item -> CompletableFuture.runAsync(() -> {
                     try {
 
-                        item.setHammingDistance(1 - map.get(item.getImageUuid()));
+                        //item.setHammingDistance(1 - map.get(item.getImageUuid()));
+                        item.setHammingDistance(map.get(item.getImageUuid()));
                         log.info("hamming = {}", item.getHammingDistance());
 
 

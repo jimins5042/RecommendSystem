@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Controller
 @RequiredArgsConstructor
@@ -20,7 +22,7 @@ public class TestController {
 
     private final SearchMapper searchMapper;
 
-    //@GetMapping("/update")
+    @GetMapping("/update")
     public void UpdatePhash() throws IOException {
         ArrayList<ImageInfo> list = searchMapper.findSearchUpdateTarget();
 
@@ -29,17 +31,46 @@ public class TestController {
         HashMap<String, String> map = new HashMap<>();
         map.put("hash", "");
         map.put("uuid", "");
-        int x = 0;
-        for (ImageInfo imageInfo : list) {
-            List<Double> list1 = extractByORB.getImageFeature(imageInfo.getImageUrl());
+        AtomicInteger x = new AtomicInteger();
 
-            String hash1 = extractByORB.encodeFeaturesAsHex(list1);
-            //String hash1 = hash.getPHash(imageInfo.getImageUrl());
+/*
+        for (ImageInfo imageInfo : list) {
+
+            String hash1 = extractByORB.getImageFeature(imageInfo.getImageUrl());
             map.replace("hash", hash1);
             map.replace("uuid", imageInfo.getImageUuid());
             log.info("x : {}, uuid : {} , hash : {}", x++, imageInfo.getImageUuid(), hash1);
             searchMapper.updatePHash(map);
         }
         log.info("업데이트 끝");
+
+ */
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        List<Future<Void>> futures = new ArrayList<>();
+
+        for (ImageInfo imageInfo : list) {
+            // 각 이미지를 처리하는 작업을 스레드 풀에 제출
+            futures.add(executorService.submit(() -> {
+                String hash1 = extractByORB.getImageFeature(imageInfo.getImageUrl());
+                //Map<String, String> map = new HashMap<>();
+                map.replace("hash", hash1);
+                map.replace("uuid", imageInfo.getImageUuid());
+                log.info("x : {}, uuid : {} , hash : {}", x.getAndIncrement(), imageInfo.getImageUuid(), hash1);
+                searchMapper.updatePHash(map);
+                return null; // 반환값은 필요 없으므로 null 반환
+            }));
+        }
+
+        // 모든 작업이 완료될 때까지 기다림
+        for (Future<Void> future : futures) {
+            try {
+                future.get(); // 예외가 발생하면 예외를 던짐
+            } catch (InterruptedException | ExecutionException e) {
+                log.error("Error processing image: ", e);
+            }
+        }
+
+        // 스레드 풀 종료
+        executorService.shutdown();
     }
 }

@@ -36,8 +36,7 @@ dependencies {
     //implementation 'org.springframework.boot:spring-boot-devtools'
     implementation 'org.openpnp:opencv:4.7.0-0' // 최신 버전으로 교체
     implementation 'com.google.guava:guava:32.1.2-jre' // 최신 버전 확인
-
-
+    implementation 'info.debatty:java-lsh:0.12'
 
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'com.mysql:mysql-connector-j'

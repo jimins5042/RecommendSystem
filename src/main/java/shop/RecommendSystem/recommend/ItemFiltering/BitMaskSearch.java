@@ -19,7 +19,7 @@ public class BitMaskSearch {
 
     private TreeMap<String, String> bitmaskTree = new TreeMap<>();
 
-    @PostConstruct
+    //@PostConstruct
     public void initializeBitMaskTree() {
         ArrayList<ImageInfo> images = searchMapper.findSearchBitMaskTarget();
 
