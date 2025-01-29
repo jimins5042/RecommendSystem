@@ -46,8 +46,8 @@ public class SearchService {
         results = searchMapper
                 .findItemCandidates(
                         //만약 resultSize가 상품 후보군의 전체 수보다 크다면 -> 전체 상품 정보 가져옴
-                        //keySet.subList(0, (resultSize > keySet.size()) ? keySet.size() : resultSize)
-                        keySet.subList(0, keySet.size())
+                        keySet.subList(0, (resultSize > keySet.size()) ? keySet.size() : resultSize)
+                        //keySet.subList(0, keySet.size())
                 );
 
         ExecutorService executor = Executors.newFixedThreadPool(10); // 최대 10개의 스레드를 사용
@@ -55,8 +55,8 @@ public class SearchService {
                 .map(item -> CompletableFuture.runAsync(() -> {
                     try {
 
-                        //item.setHammingDistance(1 - map.get(item.getImageUuid()));
-                        item.setHammingDistance(map.get(item.getImageUuid()));
+                        item.setHammingDistance(1 - map.get(item.getImageUuid()));
+                        //item.setHammingDistance(map.get(item.getImageUuid()));
                         log.info("hamming = {}", item.getHammingDistance());
 
 

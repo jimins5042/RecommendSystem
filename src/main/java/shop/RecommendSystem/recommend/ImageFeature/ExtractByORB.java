@@ -154,10 +154,10 @@ public class ExtractByORB {
             for (int i = 0; i < descriptors.rows(); i++) {
                 double[] row = descriptors.get(i, 0); // 한 행의 디스크립터 가져오기
                 for (double value : row) {
-                    if (value != 0) {
+
                         sum += value;
                         count++;
-                    }
+
                 }
             }
             double mean = sum / count;
