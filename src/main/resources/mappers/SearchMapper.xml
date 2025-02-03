@@ -76,7 +76,7 @@
 
         UPDATE image_info
         set img_feature_value = #{hash}
-        where image_uuid = #{uuid}
+        where image_original_name = #{uuid}
 
     </update>
 

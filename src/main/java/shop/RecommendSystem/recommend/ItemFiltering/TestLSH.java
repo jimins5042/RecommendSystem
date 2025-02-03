@@ -25,6 +25,7 @@ public class TestLSH {
         log.info("Initializing BitMask Tree...");
 
         ArrayList<ImageInfo> images = searchMapper.findSearchBitMaskTarget();
+
         if (images == null || images.isEmpty()) {
             log.warn("No images found for bitmask tree initialization.");
             return;
@@ -44,7 +45,7 @@ public class TestLSH {
             }
 
             try {
-                MinHash minHash = new MinHash(64, set1.size(), 123456);
+                MinHash minHash = new MinHash(500, set1.size(), 123456);
                 int[] signature1 = minHash.signature(set1);
                 bitmaskTree.put(image.getImageUuid(), signature1);
             } catch (Exception e) {
@@ -57,10 +58,11 @@ public class TestLSH {
 
 
     public HashMap<String, Double> searchLsh(String value) {
+        log.info("Searching for searchLsh...");
         HashMap<String, Double> results = new HashMap<>();
 
         TreeSet<Integer> set1 = binaryToSet(value);
-        MinHash minHash = new MinHash(64, set1.size(), 123456);
+        MinHash minHash = new MinHash(500, set1.size(), 123456);
         int[] signature1 = minHash.signature(set1);
 
         for (String key : bitmaskTree.keySet()) {

@@ -38,10 +38,8 @@ public class ExtractByORB {
         }));
     }
 
-    private final HashFunction rowHashFunction = Hashing.murmur3_32(); // 행 해싱용
-    private final HashFunction finalHashFunction = Hashing.sha256(); // 최종 해싱용
-    private final ORB orb = ORB.create(256, 1.2f, 8);
-
+    //private final ORB orb = ORB.create(256, 1.2f, 8);
+    private final ORB orb = ORB.create(256, 1.2f, 1, 0, 0, 2, ORB.HARRIS_SCORE, 8);
 
     public String getImageFeature(String imgUrl) throws IOException {
         String bitFlagList = new String();
@@ -77,10 +75,10 @@ public class ExtractByORB {
         InputStream inputStream = file.getInputStream();
 
         // InputStream을 Mat으로 변환
-        //Mat image = Imgcodecs.imdecode(new org.opencv.core.MatOfByte(inputStream.readAllBytes()), Imgcodecs.IMREAD_GRAYSCALE);
+        Mat image = Imgcodecs.imdecode(new org.opencv.core.MatOfByte(inputStream.readAllBytes()), Imgcodecs.IMREAD_GRAYSCALE);
 
-        BufferedImage img = ImageIO.read(inputStream);
-        Mat image = bufferedImageToMat(img);
+        //BufferedImage img = ImageIO.read(inputStream);
+        //Mat image = bufferedImageToMat(img);
 
         // ORB 알고리즘으로 특징점 추출
         String bitFlagList = extractDescriptors(image);
@@ -93,13 +91,15 @@ public class ExtractByORB {
     public static Mat bufferedImageToMat(BufferedImage bi) {
         // BufferedImage의 타입을 확인
         int imageType = bi.getType();
-        Mat mat;
+        Mat mat = new Mat(bi.getHeight(), bi.getWidth(), Imgcodecs.IMREAD_GRAYSCALE); // 그레이스케일 이미지;
 
+        /*
         if (imageType == BufferedImage.TYPE_BYTE_GRAY) {
             mat = new Mat(bi.getHeight(), bi.getWidth(), CvType.CV_8UC1); // 그레이스케일 이미지
         } else {
             mat = new Mat(bi.getHeight(), bi.getWidth(), CvType.CV_8UC3); // 컬러 이미지
         }
+        */
 
         byte[] data = ((DataBufferByte) bi.getRaster().getDataBuffer()).getData();
         mat.put(0, 0, data);  // 데이터 설정
@@ -155,8 +155,8 @@ public class ExtractByORB {
                 double[] row = descriptors.get(i, 0); // 한 행의 디스크립터 가져오기
                 for (double value : row) {
 
-                        sum += value;
-                        count++;
+                    sum += value;
+                    count++;
 
                 }
             }
@@ -164,8 +164,7 @@ public class ExtractByORB {
 
             // 이진화된 디스크립터 저장
             StringBuilder sb = new StringBuilder();
-            byte[] binaryDescriptors = new byte[descriptors.rows() * descriptors.cols()];
-            int l = 0;
+
             for (int i = 0; i < descriptors.rows(); i++) {
                 // 한 행의 디스크립터 가져오기
                 double[] row = descriptors.get(i, 0);
@@ -173,32 +172,8 @@ public class ExtractByORB {
                 for (int j = 0; j < row.length; j++) {
                     // 이진화 처리
                     sb.append((row[j] < mean) ? 0 : 1);
-                    //binaryDescriptors[l++] = (byte) ((row[j] < mean) ? 0 : 1);
                 }
             }
-            TreeSet<Integer> set1 = binaryToSet("0100111000110110000101110111000000101101110101001100011010000000111000101001100110000011111001010001010001010100000011000000001010100001110000111100000110100000000110110010101111011100110000000101001100011011101011101");
-            TreeSet<Integer> set2 = binaryToSet("0000001100000100110001001000110010010010010110100001000001001001011100010111001100100000110101011111110100000111011001000000000101111000001000000010100001001011001100000101110000000110101110101010110101100000");
-
-            // 전체 유니버스 크기를 동일하게 설정
-            int universeSize = Math.max(set1.last() + 1, set2.last() + 1); // 가장 큰 인덱스 + 1
-
-            // MinHash 초기화 (동일한 유니버스 크기 사용)
-
-            int[] arr = {64, 128, 192, 256};
-            for (int i : arr) {
-                MinHash minHash = new MinHash(i, set1.size(), 123456);
-                MinHash minHash2 = new MinHash(i, set2.size(), 123456);
-
-                // MinHash 서명 생성
-                int[] signature1 = minHash.signature(set1);
-                int[] signature2 = minHash2.signature(set2);
-
-                // 유사도 계산
-                double similarity = minHash.similarity(signature1, signature2);
-
-                System.out.println("Signature similarity: " + similarity);
-            }
-
 
             return sb.toString();
         } finally {
