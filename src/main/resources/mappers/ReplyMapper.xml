@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--ItemMapper의 위치를 적어줌-->
+<mapper namespace="shop.RecommendSystem.repository.mapper.ReplyMapper">
+
+    <!--글 상세 보기-->
+    <select id="selectReplyList" resultType="Reply" parameterType="Long" >
+        SELECT *
+        FROM reply_board where post_id = #{postId};
+    </select>
+
+    <insert id="saveReply" useGeneratedKeys="true" keyProperty="replyId" parameterType="Reply">
+        INSERT INTO reply_board (post_id, reply_writer, reply_password, reply_content)
+        VALUES (#{postId}, #{replyWriter}, #{replyPassword}, #{replyContent})
+    </insert>
+
+</mapper>

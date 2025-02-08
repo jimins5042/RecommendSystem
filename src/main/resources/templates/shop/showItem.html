@@ -1,9 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 
-<head th:insert="~{fragments/header :: header}">
-    <title id="page_title">글 상세 보기</title>
-</head>
+<head th:replace="~{fragments/header :: header('글 상세 보기')}"></head>
 
 <style>
 
@@ -130,7 +128,7 @@
                             </a>
                             <div class="card-body p-4">
                                 <div class="text-center">
-                                    <h5 class="fw-bolder"
+                                    <h5 class="fw-bolder item-title"
                                         th:text="${result.itemTitle != null ? result.itemTitle : '상품 제목 없음'}"></h5>
                                     <span th:text="${result.itemPrice != null ? result.itemPrice + ' 원' : '가격 없음'}"></span>
                                     <br>
@@ -146,6 +144,52 @@
                         style="position: absolute; top: 50%; right: -20px; transform: translateY(-50%); z-index: 10; background: #f1f1f1; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0px 2px 5px rgba(0,0,0,0.2); cursor: pointer;">
                     &#8250;
                 </button>
+            </div>
+        </div>
+    </section>
+
+    <section class="mb-5">
+        <div class="card bg-light">
+            <div class="card-body">
+                <!-- Comment form -->
+
+                <form th:action="@{/shop/saveReply/{id}(id=${postId})}" th:object="${replyForm}" method="post" enctype="multipart/form-data">
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- 작성자 & 비밀번호 -->
+                        <div class="d-flex flex-column">
+                            <div class="form-group mb-2">
+                                <input type="text" name="replyWriter" id="replyWriter" class="form-control" placeholder="이름 입력" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="password" name="replyPassword" id="replyPassword" class="form-control" placeholder="비밀번호 입력" required>
+                            </div>
+                        </div>
+
+                        <!-- 댓글 입력 창 -->
+                        <div class="flex-grow-1">
+                            <textarea id="replyContent" name="replyContent" class="form-control" rows="3" placeholder="댓글을 입력하세요"></textarea>
+                        </div>
+
+                        <!-- 등록 버튼 -->
+                        <button type="submit" class="btn btn-primary">등록</button>
+                    </div>
+                </form>
+
+                <br>
+
+                <!-- Comments List -->
+                <div id="commentList">
+                    <div class="d-flex mb-4" th:each="reply : ${replies}">
+                        <div class="flex-shrink-0">
+                            <img class="rounded-circle" src="https://dummyimage.com/50x50/ced4da/6c757d.jpg" alt="...">
+                        </div>
+                        <div class="ms-3">
+                            <div class="fw-bold" th:if="${reply != null}" th:text="${reply.replyWriter != null ? reply.replyWriter : 'ㅇㅇ'}"></div>
+
+                            <span th:text="${reply.replyContent}"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -186,6 +230,15 @@
         scrollWrapper.scrollBy({
             left: scrollDistance,
             behavior: 'smooth'
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".item-title").forEach(el => {
+            let text = el.innerText;
+            if (text.length > 19) {
+                el.innerText = text.substring(0, 19) + "...";
+            }
         });
     });
 </script>

@@ -79,8 +79,7 @@
                 ON s.item_image_link = i.image_uuid
             LEFT JOIN image_color_tag AS c
                 ON s.item_image_link = c.image_color_uuid
-            WHERE s.item_id =
-        #{id};
+            WHERE s.item_id =#{id};
     </delete>
 
 </mapper>

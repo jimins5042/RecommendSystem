@@ -1,9 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 
-<head th:insert="~{fragments/header :: header}">
-    <title id="page_title">글 작성 페이지</title>
-</head>
+<head th:replace="~{fragments/header :: header('글 작성 페이지')}"></head>
 
 <body>
 <div class="container mt-5">
@@ -13,7 +11,6 @@
     <h1>상품 등록</h1>
 
     <form th:action="@{/shop/addItem}" th:object="${itemForm}" method="post" enctype="multipart/form-data">
-
 
         <!-- 상품 제목 -->
         <div class="form-group">
@@ -54,6 +51,7 @@
     <br>
     <div th:insert="~{fragments/footer :: footer}"/>
 </div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
 <script>
     const img = new Image();

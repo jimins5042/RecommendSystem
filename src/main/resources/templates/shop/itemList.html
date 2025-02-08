@@ -1,11 +1,8 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
-<head>
-    <!-- 헤더 파일 포함 -->    <!-- 헤더 파일 포함 -->
-    <head th:insert="~{fragments/header :: header}">
-        <title id="page_title">관리자 페이지</title>
-    </head>
+
+<head th:replace="~{fragments/header :: header('관리자 페이지')}">
 
     <style>
 
@@ -88,7 +85,8 @@
         <ul class="pagination">
             <!-- 이전 페이지 -->
             <li th:if="${pageDto.pageNo > 9}">
-                <a th:href="@{/shop/itemList(page=${(pageDto.pageNo/10 - 1) * 10 +1})}" aria-label="Previous">&laquo;</a>
+                <a th:href="@{/shop/itemList(page=${(pageDto.pageNo/10 - 1) * 10 +1})}"
+                   aria-label="Previous">&laquo;</a>
             </li>
 
             <!-- 페이지 번호들 -->

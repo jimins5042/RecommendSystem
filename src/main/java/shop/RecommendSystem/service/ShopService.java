@@ -30,7 +30,7 @@ public class ShopService {
         if (!file.isEmpty()) {
             imgUuid = uploadService.uploadFile(file);
         }
-
+/*
         // 클라이언트에서 전달 받은 이미지의 대표 색상을 저장
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -56,6 +56,8 @@ public class ShopService {
 
             }
         }
+
+ */
 
         //게시물 정보 저장
         Item item = new Item(

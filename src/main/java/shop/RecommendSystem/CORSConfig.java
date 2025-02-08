@@ -1,4 +1,4 @@
-package personal.MakeBouquet;
+package shop.RecommendSystem;
 
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
