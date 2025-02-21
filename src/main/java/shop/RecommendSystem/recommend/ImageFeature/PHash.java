@@ -177,8 +177,4 @@ public class PHash {
         log.info(" 5. {} ", System.currentTimeMillis() - beforeTime);
         return hexHash.toString();
     }
-
-
-
-
 }

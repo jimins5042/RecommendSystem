@@ -11,10 +11,28 @@
         FROM image_info
     </select>
 
-    <select id="findSearchBitMaskTarget" resultType="ImageInfo">
+    <select id="findReduceTarget" resultType="PreFilterDto">
         SELECT image_uuid,
-               img_feature_value as image_hash_code
+               img_feature_order as featureOrder
         FROM image_info
+    </select>
+
+    <select id="findReduceTarget" resultType="PreFilterDto">
+        SELECT image_uuid,
+               img_feature_order as featureOrder
+        FROM image_info
+    </select>
+
+    <select id="findPreFilterTarget" parameterType="list" resultType="PreFilterDto">
+        SELECT
+        image_uuid, img_feature_value
+        FROM
+        image_info
+        WHERE
+        image_uuid IN
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
     </select>
 
     <!-- SELECT 쿼리 -->
@@ -33,44 +51,6 @@
             #{item}
         </foreach>
     </select>
-
-
-    <select id="findImageColorTag" parameterType="String" resultType="String">
-        SELECT GROUP_CONCAT(color_tag SEPARATOR ',') AS color_tags
-        FROM image_color_tag
-        WHERE image_color_uuid IN (SELECT image_uuid from image_info where image_hash_code = #{imageColorUuid})
-
-        GROUP BY image_color_uuid;
-    </select>
-    <select id="findImageColorTagByuuid" parameterType="String" resultType="String">
-        SELECT GROUP_CONCAT(color_tag SEPARATOR ',') AS color_tags
-        FROM image_color_tag
-        WHERE image_color_uuid = #{imageColorUuid}
-
-        GROUP BY image_color_uuid;
-    </select>
-
-
-    <select id="findImageColorTags" parameterType="list" resultMap="imageColorTagsMap">
-        SELECT
-        image_color_uuid,
-        GROUP_CONCAT(color_tag SEPARATOR ',') AS color_tags
-        FROM
-        image_color_tag
-        WHERE
-        image_color_uuid IN
-        <foreach item="imageColorUuid" collection="list" open="(" separator="," close=")">
-            #{imageColorUuid}
-        </foreach>
-        GROUP BY
-        image_color_uuid;
-    </select>
-
-
-    <resultMap id="imageColorTagsMap" type="java.util.HashMap">
-        <id property="image_color_uuid" column="image_color_uuid"/>
-        <result property="color_tags" column="color_tags"/>
-    </resultMap>
 
     <update id="updatePHash" parameterType="Map">
 

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.repository.ShopRepository;
-import shop.RecommendSystem.service.ShopService;
+import shop.RecommendSystem.shoppingMall.ShopService;
 
 import java.util.HashMap;
 import java.util.List;

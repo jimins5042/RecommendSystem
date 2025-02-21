@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
-import shop.RecommendSystem.service.ImageProcessing;
+import shop.RecommendSystem.recommend.ImageProcessing;
 
 import java.util.HashMap;
 import java.util.List;
