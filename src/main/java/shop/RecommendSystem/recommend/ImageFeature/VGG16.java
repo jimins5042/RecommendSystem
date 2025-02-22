@@ -1,18 +1,25 @@
 package shop.RecommendSystem.recommend.ImageFeature;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Base64;
 import java.util.HashMap;
 
 @Slf4j
 public class VGG16 {
 
-    private static final String FASTAPI_URL = "http://127.0.0.1:8000/process-image/";
+    //private static final String FASTAPI_URL = "http://127.0.0.1:8000/process-image/";
+
+    @Value("${fastapi_url}")
+    private String FASTAPI_URL;
+
 
     /**
      - VGG16 모델을 이용해 이미지의 특징점을 추출한 후, 0을 제외한 특징점 값들의 평균을 기준으로 이진화한 binary 값을 생성
@@ -27,13 +34,32 @@ public class VGG16 {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
+        ByteArrayResource fileResource = new ByteArrayResource(file.getBytes()) {
+            @Override
+            public String getFilename() {
+                return file.getOriginalFilename();
+            }
+        };
+
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", new HttpEntity<>(file.getBytes(), headers));
+        body.add("file", fileResource);
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
         ResponseEntity<HashMap> response = restTemplate.exchange(FASTAPI_URL, HttpMethod.POST, requestEntity, HashMap.class);
 
-        return response.getBody();
+        if (response.getBody() != null) {
+            String order = (String) response.getBody().get("order");
+            String featuresBase64 = (String) response.getBody().get("features");
+
+            // 🔥 Base64 → byte[] 변환
+            byte[] features = Base64.getDecoder().decode(featuresBase64);
+
+            HashMap<String, Object> result = new HashMap<>();
+            result.put("order", order);
+            result.put("features", features);
+            return result;
+        }
+        return null;
     }
 
 }

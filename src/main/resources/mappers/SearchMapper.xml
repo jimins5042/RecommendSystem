@@ -17,11 +17,6 @@
         FROM image_info
     </select>
 
-    <select id="findReduceTarget" resultType="PreFilterDto">
-        SELECT image_uuid,
-               img_feature_order as featureOrder
-        FROM image_info
-    </select>
 
     <select id="findPreFilterTarget" parameterType="list" resultType="PreFilterDto">
         SELECT

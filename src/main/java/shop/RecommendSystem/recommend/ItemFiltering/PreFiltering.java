@@ -81,15 +81,17 @@ public class PreFiltering {
             similarImage.put(candidate.getImageUuid(), cosineSimilarity(targetBitArray, candidate.getImgFeatureValue()));
         }
 
+        System.out.println("vggnet");
+
         return similarImage;
     }
 
 
     /**
-     * 1-1. 유사 이미지 검색 전, 검색 범위를 줄이기 위한 전처리 과정
+     * 1-1. 유사도 게산 전, 검색 범위를 줄이기 위한 전처리 과정
      * 문자열로 저장된 질의 이미지의 레이어 번호를 int[] 배열로 변환
      *
-     * @param layerList : JSON형식으로 저장된, Intensity 평균값의 크기순으로 정렬된 레이어 번호 들
+     * @param layerList : JSON형식으로 저장된, Intensity 평균값의 크기순으로 정렬된 레이어 번호들
      * @return : 유사도를 계산할 이미지의 후보군을 300개 이하로 줄인 다음 반환
      * @throws JsonProcessingException
      */
@@ -101,7 +103,7 @@ public class PreFiltering {
 
     /**
      * 1-2. 검색 범위를 줄이는 함수
-     * 큰 특징(Intensity)을 나타내는 레이어 번호 순으로, 그 레이어를 가지는 이미지를 모두 찾는다.
+     * 가장 크게 반응한(Intensity가 큰) 레이어 번호 순으로, 그 레이어를 가지는 이미지를 모두 찾는다.
      * <p>
      * 1) num 번째 레이어를 가진 상품번호를 AND 비트 연산을 통해 찾는다.
      * 2) 위의 방법으로 num+1 번째, num+2 번째 레이어도 가지고 있는 이미지를 찾는다.
@@ -122,7 +124,7 @@ public class PreFiltering {
         byte target = (byte) (1 << bitIndex);  // 비트 설정
 
         for (PreFilterDto preFilterDto : list) {
-            if ((preFilterDto.getLayerOrderList()[byteIndex] & target) != 1) {
+            if ((preFilterDto.getLayerOrderList()[byteIndex] & target) != 0) {
                 reducedList.add(preFilterDto);
             }
         }

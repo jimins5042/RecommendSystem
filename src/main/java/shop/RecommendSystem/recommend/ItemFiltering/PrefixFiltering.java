@@ -47,11 +47,11 @@ public class PrefixFiltering {
             if (!duplicateCheck.contains(key) && lshBuckets.containsKey(key)) {
 
                 for (ImageInfo image : lshBuckets.get(key)) {
-                    Double hammingDistance = calHammingDistance(hashValue, image.getImageHashCode());
+                    Double hammingDistance = 1 - calHammingDistance(hashValue, image.getImageHashCode());
                     candidates.put(image.getImageUuid(), hammingDistance);
                     //유사도가 60% 미만인 상품은 후보군에서 제외
 
-                    if (hammingDistance <= 0.4) {
+                    if (hammingDistance >= 0.5) {
                         candidates.put(image.getImageUuid(), hammingDistance);
                     }
 
