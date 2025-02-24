@@ -14,6 +14,7 @@ public class Item {
     private Long itemPrice;
     private String itemImageLink;
     private String hashCode;
+    private byte[] bitArray;
 
     public Item() {
 
@@ -35,6 +36,17 @@ public class Item {
         this.itemPrice = itemPrice;
         this.itemImageLink = itemImageLink;
         this.hashCode = hashCode;
+    }
+
+    public Item(Long itemId, String itemTitle, String itemContent, Date itemDate, Long itemPrice, String itemImageLink, String hashCode, byte[] bitArray) {
+        this.itemId = itemId;
+        this.itemTitle = itemTitle;
+        this.itemContent = itemContent;
+        this.itemDate = itemDate;
+        this.itemPrice = itemPrice;
+        this.itemImageLink = itemImageLink;
+        this.hashCode = hashCode;
+        this.bitArray = bitArray;
     }
 }
 

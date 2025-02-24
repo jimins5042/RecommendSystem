@@ -32,6 +32,25 @@
                s.item_content,
                s.item_date,
                s.item_price,
+               i.image_url         as item_image_link,
+               i.img_feature_order as hashCode,
+               i.img_feature_value as bitArray
+
+        FROM shop_board AS s
+                 LEFT JOIN
+             image_info AS i
+             ON
+                 s.item_image_link = i.image_uuid
+        WHERE s.item_id = #{id};
+    </select>
+
+    <select id="findByIdToPhash" parameterType="Long" resultType="Item">
+
+        SELECT s.item_id,
+               s.item_title,
+               s.item_content,
+               s.item_date,
+               s.item_price,
                i.image_url       as item_image_link,
                i.image_hash_code as hashCode
         FROM shop_board AS s

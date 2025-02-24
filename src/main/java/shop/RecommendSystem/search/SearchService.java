@@ -1,5 +1,6 @@
 package shop.RecommendSystem.search;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -132,6 +133,12 @@ public class SearchService {
     public List<SearchResult> searchSimilarItems(String hashcode, int resultSize) {
 
         HashMap<String, Double> map = prefix.searchSimilarItem(hashcode);
+        return searchSimilarItems(map, resultSize);
+    }
+
+    public List<SearchResult> searchSimilarItems(String order, byte[] feature, int resultSize) throws JsonProcessingException {
+
+        HashMap<String, Double> map = filter.searchSimilarItem(order, feature);
         return searchSimilarItems(map, resultSize);
     }
 }

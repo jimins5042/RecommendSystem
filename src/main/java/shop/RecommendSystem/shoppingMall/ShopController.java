@@ -1,5 +1,6 @@
 package shop.RecommendSystem.shoppingMall;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -106,7 +107,7 @@ public class ShopController {
     }
 
     @GetMapping("/detail/{id}")
-    public String showItem(@PathVariable("id") Long id, Model model) {
+    public String showItem(@PathVariable("id") Long id, Model model) throws Exception {
         log.info("=== 이미지 상세 조회 ===");
 
         // 상품 정보 조회
@@ -114,7 +115,8 @@ public class ShopController {
 
         //추천 상품 조회
         if (item.getHashCode() != null) {
-            List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), 8);
+            //List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), 8);
+            List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(),item.getBitArray(), 8);
             model.addAttribute("results", results);
         }
 
