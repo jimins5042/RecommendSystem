@@ -14,7 +14,6 @@
         position: relative;
     }
 
-    /* 코드 1 전용 스타일 */
     #scrollWrapper {
         display: flex;
         gap: 1rem;
@@ -22,6 +21,9 @@
         white-space: nowrap;
         padding: 10px;
         -webkit-overflow-scrolling: touch;
+        width: 100%; /* 가로 폭을 부모 요소에 맞춤 */
+        max-width: 1060px; /* (250px * 4) + gap 고려 */
+        margin: 0 auto;
     }
 
     #scrollLeft, #scrollRight {
@@ -39,11 +41,20 @@
     }
 
     #scrollLeft {
-        left: -20px;
+        left: 10px;
     }
 
     #scrollRight {
-        right: -20px;
+        right: 10px;
+    }
+
+    .section-box {
+        background: #ffffff; /* 배경색 (GPT 입력창처럼 흰색) */
+        border: 1px solid #ddd; /* 연한 테두리 */
+        border-radius: 10px; /* 둥근 모서리 */
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* 부드러운 그림자 */
+        padding: 20px; /* 안쪽 여백 */
+        margin-bottom: 0px; /* 아래쪽 간격 */
     }
 
 </style>
@@ -52,122 +63,126 @@
 <div th:insert="~{fragments/bodyHeader :: bodyHeader}"/>
 
 <div class="container" style="margin-top: 100px; margin-bottom: 100px;">
-    <div class="row" style="display: flex; align-items: center;">
-        <!-- 왼쪽 화면 -->
-        <div class="col-md-6">
-            <div class="product-image" style="text-align: center;"> <!-- 이미지 오른쪽 정렬 -->
-                <div th:if="${item.itemImageLink}">
-                    <img th:src="${item.itemImageLink}" th:alt="${item.itemTitle}" loading="lazy" class="img-fluid"
-                         style="max-width: 400px;">
-                </div>
-                <div th:if="${item.itemImageLink == null}">
-                    <p>이미지가 없습니다.</p>
-                </div>
-            </div>
-        </div>
 
-        <!-- 오른쪽 화면 -->
-        <div class="col-md-6">
-            <div class="product-info">
-                <h3 th:text="${item.itemTitle}"></h3>
-
-                <p><b>내용:</b> <span th:text="${item.itemContent}"></span></p>
-
-                <p><b>상품 코드 :</b>
-                    <span class="badge bg-danger" th:text="${item.itemId}"></span>
-                </p>
-
-                <p><b>작성 날짜:</b>
-                    <span th:text="${#dates.format(item.itemDate, 'yyyy-MM-dd') != null ? #dates.format(item.itemDate, 'yyyy-MM-dd') : ''}"></span>
-                </p>
-
-                <p><b>해시 코드:</b>
-                    <span th:text="${item.hashCode != null ? item.hashCode : '없음'}"></span>
-                </p>
-
-                <p><b>제조사:</b> <span>전북 전주시 전북대학교</span></p>
-
-                <h4>
-                    <span th:text="${item.itemPrice != null ? '₩' + item.itemPrice : '무료'}"></span>원
-                </h4>
-                <br>
-
-                <p>
-                    <a href="#" class="btn btn-info">상품 주문 &raquo;</a>
-                    <a href="/" class="btn btn-secondary">주문취소 &raquo;</a>
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <section class="py-5" style="margin-top: 10px;" th:if="${results != null}">
-        <div class="container px-4 px-lg-5 mt-5">
-            <div class="py-5 text-center">
-                <h4>📢 현재 보시는 상품과 시각적으로 유사한 상품들이에요 📢</h4>
-            </div>
-
-            <!-- 버튼과 가로 스크롤을 위한 래퍼 -->
-            <div style="position: relative; padding: 10px;">
-                <!-- 왼쪽 버튼 -->
-                <button id="scrollLeft"
-                        style="position: absolute; top: 50%; left: -20px; transform: translateY(-50%); z-index: 10; background: #f1f1f1; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0px 2px 5px rgba(0,0,0,0.2); cursor: pointer;">
-                    &#8249;
-                </button>
-
-                <div id="scrollWrapper"
-                     style="overflow-x: auto; white-space: nowrap; padding: 10px; -webkit-overflow-scrolling: touch;">
-                    <div style="display: inline-flex; gap: 1rem;">
-
-                        <!-- Thymeleaf loop for products -->
-                        <div class="card h-100" th:each="result : ${results}" style="width: 250px; flex: 0 0 auto;">
-                            <a th:href="@{/shop/detail/{itemId}(itemId=${result.itemId})}">
-                                <img class="card-img-top img-fluid"
-                                     th:src="${result.imageUrl != null ? result.imageUrl : '/images/default.jpg'}"
-                                     th:alt="${result.itemTitle != null ? result.itemTitle : '상품 이미지'}"
-                                     loading="lazy" style="max-width: 100%; height: auto;">
-                            </a>
-                            <div class="card-body p-4">
-                                <div class="text-center">
-                                    <h5 class="fw-bolder item-title"
-                                        th:text="${result.itemTitle != null ? result.itemTitle : '상품 제목 없음'}"></h5>
-                                    <span th:text="${result.itemPrice != null ? result.itemPrice + ' 원' : '가격 없음'}"></span>
-                                    <br>
-                                    <span th:text="${result.hammingDistance != null ? '유사도: ' + result.hammingDistance : '유사도 정보 없음'}"></span>
-                                </div>
-                            </div>
-                        </div>
+    <section class="section-box">
+        <div class="row" style="display: flex; align-items: center;">
+            <!-- 왼쪽 화면 -->
+            <div class="col-md-6">
+                <div class="product-image" style="text-align: center;"> <!-- 이미지 오른쪽 정렬 -->
+                    <div th:if="${item.itemImageLink}">
+                        <img th:src="${item.itemImageLink}" th:alt="${item.itemTitle}" loading="lazy" class="img-fluid"
+                             style="max-width: 400px;">
+                    </div>
+                    <div th:if="${item.itemImageLink == null}">
+                        <p>이미지가 없습니다.</p>
                     </div>
                 </div>
+            </div>
 
-                <!-- 오른쪽 버튼 -->
-                <button id="scrollRight"
-                        style="position: absolute; top: 50%; right: -20px; transform: translateY(-50%); z-index: 10; background: #f1f1f1; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0px 2px 5px rgba(0,0,0,0.2); cursor: pointer;">
-                    &#8250;
-                </button>
+            <!-- 오른쪽 화면 -->
+            <div class="col-md-6">
+                <div class="product-info">
+                    <h3 th:text="${item.itemTitle}"></h3>
+
+                    <p><b>내용:</b> <span th:text="${item.itemContent}"></span></p>
+
+                    <p><b>상품 코드 :</b>
+                        <span class="badge bg-danger" th:text="${item.itemId}"></span>
+                    </p>
+
+                    <p><b>작성 날짜:</b>
+                        <span th:text="${#dates.format(item.itemDate, 'yyyy-MM-dd') != null ? #dates.format(item.itemDate, 'yyyy-MM-dd') : ''}"></span>
+                    </p>
+
+                    <p><b>해시 코드:</b>
+                        <span th:text="${item.hashCode != null ? item.hashCode : '없음'}"></span>
+                    </p>
+
+                    <p><b>제조사:</b> <span>전북 전주시 전북대학교</span></p>
+
+                    <h4>
+                        <span th:text="${item.itemPrice != null ? '₩' + item.itemPrice : '무료'}"></span>원
+                    </h4>
+                    <br>
+
+                    <p>
+                        <a href="#" class="btn btn-info">상품 주문 &raquo;</a>
+                        <a href="/" class="btn btn-secondary">주문취소 &raquo;</a>
+                    </p>
+                </div>
             </div>
         </div>
     </section>
 
-    <section class="mb-5">
+    <section class="py-5" style="margin-top: 10px;">
+    <!--section class="py-5 section-box" style="margin-top: 10px;"-->
+        <div class="container px-4 px-lg-5 mt-5">
+            <div class="text-center">
+                <h4>📢 현재 보시는 상품과 시각적으로 유사한 상품들이에요 📢</h4>
+            </div>
+
+            <div th:if="${results == null or #lists.isEmpty(results)}" class="text-center">
+                <p>유사한 상품이 없습니다.</p>
+            </div>
+
+            <div th:if="${results != null and not #lists.isEmpty(results)}">
+                <!-- 가로 스크롤 상품 리스트 -->
+                <div style="position: relative; padding: 10px;">
+                    <button id="scrollLeft"> &#8249;</button>
+
+                    <div id="scrollWrapper">
+                        <div style="display: inline-flex; gap: 1rem;">
+                            <div class="card h-100" th:each="result : ${results}" style="width: 250px; flex: 0 0 auto;">
+                                <a th:href="@{/shop/detail/{itemId}(itemId=${result.itemId})}">
+                                    <img class="card-img-top img-fluid"
+                                         th:src="${result.imageUrl != null ? result.imageUrl : '/images/default.jpg'}"
+                                         th:alt="${result.itemTitle != null ? result.itemTitle : '상품 이미지'}"
+                                         loading="lazy" style="max-width: 100%; height: auto;">
+                                </a>
+                                <div class="card-body p-4">
+                                    <div class="text-center">
+                                        <h5 class="fw-bolder item-title"
+                                            th:text="${result.itemTitle != null ? result.itemTitle : '상품 제목 없음'}"></h5>
+                                        <span th:text="${result.itemPrice != null ? result.itemPrice + ' 원' : '가격 없음'}"></span>
+                                        <br>
+                                        <span th:text="${result.hammingDistance != null ? '유사도: ' + result.hammingDistance : '유사도 정보 없음'}"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="scrollRight"> &#8250;</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <section class="mb-5" style="width: 1200px; margin: 0 auto;">
         <div class="card bg-light">
             <div class="card-body">
                 <!-- Comment form -->
 
-                <form th:action="@{/shop/saveReply/{id}(id=${postId})}" th:object="${replyForm}" method="post" enctype="multipart/form-data">
+                <form th:action="@{/shop/saveReply/{id}(id=${postId})}" th:object="${replyForm}" method="post"
+                      enctype="multipart/form-data">
                     <div class="d-flex align-items-center gap-3">
                         <!-- 작성자 & 비밀번호 -->
                         <div class="d-flex flex-column">
                             <div class="form-group mb-2">
-                                <input type="text" name="replyWriter" id="replyWriter" class="form-control" placeholder="이름 입력" required>
+                                <input type="text" name="replyWriter" id="replyWriter" class="form-control"
+                                       placeholder="이름 입력" required>
                             </div>
                             <div class="form-group">
-                                <input type="password" name="replyPassword" id="replyPassword" class="form-control" placeholder="비밀번호 입력" required>
+                                <input type="password" name="replyPassword" id="replyPassword" class="form-control"
+                                       placeholder="비밀번호 입력" required>
                             </div>
                         </div>
 
                         <!-- 댓글 입력 창 -->
                         <div class="flex-grow-1">
-                            <textarea id="replyContent" name="replyContent" class="form-control" rows="3" placeholder="댓글을 입력하세요"></textarea>
+                            <textarea id="replyContent" name="replyContent" class="form-control" rows="3"
+                                      placeholder="댓글을 입력하세요"></textarea>
                         </div>
 
                         <!-- 등록 버튼 -->
@@ -184,7 +199,8 @@
                             <img class="rounded-circle" src="https://dummyimage.com/50x50/ced4da/6c757d.jpg" alt="...">
                         </div>
                         <div class="ms-3">
-                            <div class="fw-bold" th:if="${reply != null}" th:text="${reply.replyWriter != null ? reply.replyWriter : 'ㅇㅇ'}"></div>
+                            <div class="fw-bold" th:if="${reply != null}"
+                                 th:text="${reply.replyWriter != null ? reply.replyWriter : 'ㅇㅇ'}"></div>
 
                             <span th:text="${reply.replyContent}"></span>
                         </div>
@@ -196,10 +212,6 @@
 
     <br>
     <div th:insert="~{fragments/footer :: footer}"/>
-</div>
-
-<div class="col-6 text-left">
-    <button id="uploadBtn" class="btn btn-success">상품 리스트로 이동</button>
 </div>
 
 <script>
@@ -215,7 +227,7 @@
     const scrollRight = document.getElementById('scrollRight');
 
     // 스크롤 이동 거리
-    const scrollDistance = 300;
+    const scrollDistance = 1060;
 
     // 왼쪽 버튼 클릭 시
     scrollLeft.addEventListener('click', () => {

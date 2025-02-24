@@ -26,7 +26,7 @@ public class SearchController {
 
     private final ImageProcessing imgCtrl;
     private final SearchService searchService;
-
+    private final VGG16 vgg16;
 
     @GetMapping("/findImg")
     public String findImg(Model model) {
@@ -46,8 +46,9 @@ public class SearchController {
 
             String hashValue = new PHash().getPHash(file);
             log.info("hashValue: " + hashValue);
-
+            long beforeTime1 = System.currentTimeMillis();
             List<SearchResult> results = searchService.searchSimilarItems(hashValue, 10);
+            log.info("searchSimilarItems: " + (System.currentTimeMillis() - beforeTime1));
 
             response.put("hashValue", hashValue);
             response.put("runTime", String.valueOf(System.currentTimeMillis() - beforeTime));
@@ -77,12 +78,15 @@ public class SearchController {
 
             long beforeTime = System.currentTimeMillis();
 
-            Map<String, Object> req = new VGG16().sendImageToFastAPI(file);
+            Map<String, Object> req = vgg16.sendImageToFastAPI(file);
 
             String order = (String) req.get("order");
             byte[] feature = (byte[]) req.get("features");
 
+
+            long beforeTime1 = System.currentTimeMillis();
             List<SearchResult> results = searchService.searchSimilarItems(order, feature, 10);
+            log.info("searchSimilarItems: " + (System.currentTimeMillis() - beforeTime1));
 
             response.put("hashValue", "e1a16da596169366");
             response.put("runTime", String.valueOf(System.currentTimeMillis() - beforeTime));

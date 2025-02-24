@@ -30,6 +30,12 @@
         </foreach>
     </select>
 
+    <select id="findLshTarget" resultType="PreFilterDto">
+        SELECT image_uuid,
+               img_feature_value
+        FROM image_info
+    </select>
+
     <!-- SELECT 쿼리 -->
     <select id="findItemCandidates" parameterType="list" resultType="SearchResult">
         SELECT

@@ -17,10 +17,13 @@ public interface SearchMapper {
     List<SearchResult> findItemCandidates(List<String> keySet);
 
     ArrayList<ImageInfo> findSearchUpdateTarget();
+
     void updatePHash(Map<String, String> map);
 
     ArrayList<PreFilterDto> findReduceTarget();
 
     ArrayList<PreFilterDto> findPreFilterTarget(List<String> keySet);
+
+    ArrayList<PreFilterDto> findLshTarget();
 
 }

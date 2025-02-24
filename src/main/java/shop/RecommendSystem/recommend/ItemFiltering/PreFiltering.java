@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import shop.RecommendSystem.dto.PreFilterDto;
 import shop.RecommendSystem.repository.mapper.SearchMapper;
 
@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service
+@Component
 @RequiredArgsConstructor
 @Slf4j
 public class PreFiltering {
@@ -26,14 +26,14 @@ public class PreFiltering {
 
     //프로젝트 시작시 실행
     @PostConstruct
-    public void initializeLSH() throws JsonProcessingException {
+    public void initializeSearchData() throws JsonProcessingException {
         ArrayList<PreFilterDto> images = searchMapper.findReduceTarget();
 
         for (PreFilterDto image : images) {
 
             PreFilterDto preFilter = PreFilterDto.builder()
                     .imageUuid(image.getImageUuid())
-                    .layerOrderList(addBite(image.getFeatureOrder()))
+                    .layerOrderList(addSearchData(image.getFeatureOrder()))
                     .build();
 
             list.add(preFilter);
@@ -41,8 +41,9 @@ public class PreFiltering {
         log.info("=== PreFilter list initialized ===");
     }
 
+
     // 추출한 25개의 레이어의 번호를 512비트 크기의 비트 벡터로 변환 후 저장
-    public byte[] addBite(String list) throws JsonProcessingException {
+    public byte[] addSearchData(String list) throws JsonProcessingException {
         byte[] bitArray = new byte[64];
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -65,7 +66,7 @@ public class PreFiltering {
      * @return : 이미지의 uuid와 유사도가 저장된 HashMap
      * @throws JsonProcessingException
      */
-    public HashMap<String, Double> searchSimilarImage(String layerList, byte[] targetBitArray) throws JsonProcessingException {
+    public HashMap searchSimilarItem(String layerList, byte[] targetBitArray) throws JsonProcessingException {
 
         HashMap<String, Double> similarImage = new HashMap<>();
 
@@ -129,7 +130,7 @@ public class PreFiltering {
             }
         }
         // 이미지 후보군의 수가 300개 이하거나, 더이상 탐색할 레이어 번호가 없다면 리스트를 반환
-        if (reducedList.size() < 300 || num == 24) {
+        if (reducedList.size() <= 300 || num == 24) {
             return reducedList;
         } else {
             // 아니라면 탐색 범위를 더 줄이기

@@ -13,6 +13,7 @@ import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.dto.Page;
 import shop.RecommendSystem.dto.Reply;
 import shop.RecommendSystem.dto.SearchResult;
+import shop.RecommendSystem.recommend.ImageFeature.VGG16;
 import shop.RecommendSystem.repository.ShopRepository;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
 import shop.RecommendSystem.repository.mapper.SearchMapper;

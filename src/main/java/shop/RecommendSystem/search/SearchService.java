@@ -26,23 +26,45 @@ public class SearchService {
     private final PreFiltering filter;
     private final SearchMapper searchMapper;
 
+    /**
+     * pHash를 이용해 유사 이미지를 탐색하는 함수
+     *
+     * @param hashcode : 16진수로 변환된 pHash 값
+     * @param resultSize : 반환받을 탐색 결과 갯수
+     * @return : 유사도가 큰 순으로 정렬된 상품 정보 데이터
+     */
     public List<SearchResult> searchSimilarItems(String hashcode, int resultSize) {
 
-        HashMap<String, Double> map = prefix.searchLSH(hashcode);
+        HashMap<String, Double> map = prefix.searchSimilarItem(hashcode);
         return searchSimilarItems(map, resultSize);
     }
 
+    /**
+     * VGG16을 이용해 유사 객체 이미지를 탐색하는 함수
+     *
+     * @param order : Intensity 평균값의 크기 순으로 정렬된, 이미지의 레이어 번호. JSON 형식으로 되어 있음
+     * @param imgFeature : 이진화된 25088bit 크기의 이미지 특징점
+     * @param resultSize : 반환받을 탐색 결과 갯수
+     * @return 유사도가 큰 순으로 정렬된 상품 정보 데이터
+     * @throws JsonProcessingException
+     */
     public List<SearchResult> searchSimilarItems(String order, byte[] imgFeature, int resultSize) throws JsonProcessingException {
         log.info("searchSimilarItems order: {}", order);
-        HashMap<String, Double> map = filter.searchSimilarImage(order, imgFeature);
+        HashMap<String, Double> map = filter.searchSimilarItem(order, imgFeature);
 
         return searchSimilarItems(map, resultSize);
     }
 
-
+    /**
+     * 상품의 uuid와 유사도가 저장된 HashMap을 바탕으로 상품 정보를 DB에서 가져오고, 유사도 순으로 정렬하여 탐색 결과를 반환
+     *
+     * @param map : 상품의 uuid와 유사도가 저장된 HashMap
+     * @param resultSize : 반환할 탐색 결과 갯수
+     * @return : 유사도가 큰 순으로 정렬된 상품 정보 데이터
+     */
     public List<SearchResult> searchSimilarItems(HashMap<String, Double> map, int resultSize) {
 
-        //해밍 거리를 기준으로 내림차 정렬
+        //유사도를 기준으로 내림차 정렬
         ArrayList<String> keySet = new ArrayList<>(map.keySet());
         keySet.sort((o1, o2) -> map.get(o2).compareTo(map.get(o1)));
         List<SearchResult> results = new ArrayList<>();
@@ -76,6 +98,7 @@ public class SearchService {
 
         executor.shutdown(); // 작업 완료 후 Executor 종료
 
+        // DB에서 상품 정보를 반환 받을 때 uuid의 사전순으로 반환 받으므로, 유사도 순으로 재정렬
         results.sort((o1, o2) -> o2.getHammingDistance().compareTo(o1.getHammingDistance()));
 
         return results;
