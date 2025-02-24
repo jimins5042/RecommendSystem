@@ -80,7 +80,7 @@ public class SearchService {
      */
     public List<SearchResult> searchSimilarItems(HashMap<String, Double> map, int resultSize) {
 
-        //유사도를 기준으로 내림차 정렬
+        // 유사도를 기준으로 내림차 정렬
         ArrayList<String> keySet = new ArrayList<>(map.keySet());
         keySet.sort((o1, o2) -> map.get(o2).compareTo(map.get(o1)));
         List<SearchResult> results = new ArrayList<>();
@@ -89,7 +89,7 @@ public class SearchService {
             return results;
         }
 
-        //LSH에서 탐색한 상품 후보군 중, 유사도가 높은 상위 {resultSize}개의 상품 정보를 가져옴
+        // LSH에서 탐색한 상품 후보군 중, 유사도가 높은 상위 {resultSize}개의 상품 정보를 가져옴
         results = searchMapper
                 .findItemCandidates(
                         //만약 resultSize가 상품 후보군의 전체 수보다 크다면 -> 전체 상품 정보 가져옴

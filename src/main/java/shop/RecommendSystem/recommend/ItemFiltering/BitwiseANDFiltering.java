@@ -23,7 +23,7 @@ public class BitwiseANDFiltering {
 
     private ArrayList<PreFilterDto> list = new ArrayList<>();
 
-    //프로젝트 시작시 실행
+    // 프로젝트 시작시 실행
     @PostConstruct
     public void initializeSearchData() throws JsonProcessingException {
         ArrayList<PreFilterDto> images = searchMapper.findReduceTarget();

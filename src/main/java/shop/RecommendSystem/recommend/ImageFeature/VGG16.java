@@ -1,10 +1,7 @@
 package shop.RecommendSystem.recommend.ImageFeature;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
@@ -12,7 +9,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
-import shop.RecommendSystem.Config;
 
 import java.util.Base64;
 import java.util.HashMap;
@@ -59,7 +55,7 @@ public class VGG16 {
             String order = (String) response.getBody().get("order");
             String featuresBase64 = (String) response.getBody().get("features");
 
-            // 🔥 Base64 → byte[] 변환
+            // Base64 → byte[] 변환
             byte[] features = Base64.getDecoder().decode(featuresBase64);
 
             HashMap<String, Object> result = new HashMap<>();
