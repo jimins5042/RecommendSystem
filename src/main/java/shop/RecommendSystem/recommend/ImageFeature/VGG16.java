@@ -22,10 +22,10 @@ import java.util.HashMap;
 @Component
 public class VGG16 {
 
-    //@Value("${fastApiUrl}")
-    //private String url;
+    @Value("${fastApiUrl}")
+    private String url;
 
-    private String url = "http://127.0.0.1:8000/process-image/";
+    //private String url = "http://127.0.0.1:8000/process-image/";
 
     /**
      * - VGG16 모델을 이용해 이미지의 특징점을 추출한 후, 0을 제외한 특징점 값들의 평균을 기준으로 이진화한 binary 값을 생성

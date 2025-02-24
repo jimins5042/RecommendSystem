@@ -18,7 +18,7 @@ public class MinHashFiltering {
     private final SearchMapper searchMapper;
     private HashMap<String, int[]> minHashMap = new HashMap<>();
 
-    @PostConstruct
+    //@PostConstruct
     public void initializeSearchData() {
         try {
             ArrayList<PreFilterDto> images = searchMapper.findLshTarget();
