@@ -161,7 +161,7 @@
                 </div>
 
                 <div class="tooltip-container">
-                    <button type="button" class="btn btn-warning" onclick="submitForm('/search/findImg')">해시값 계산
+                    <button type="button" class="btn btn-warning" onclick="submitForm('/search/pHash')">해시값 계산
                     </button>
                     <div class="tooltip-text">
                         <h5>이미지로 검색하기</h5>
@@ -171,19 +171,32 @@
                 </div>
 
                 <div class="tooltip-container">
-                    <!--button type="button" class="btn btn-warning" onclick="submitForm('/search/findImgFeature')">특징점
-                        계산
-                    </button-->
-                    <button type="button" class="btn btn-warning" onclick="submitForm('/search/findImgFeatureLSH')">특징점
-                    계산
-                </button>
+
+                    <button type="button" class="btn btn-warning" onclick="submitForm('/search/VGG16')">
+                        특징점 계산
+                    </button>
                     <div class="tooltip-text">
                         <h5>이미지로 검색하기</h5>
                         </br>
-                        ORB 알고리즘을 이용한 유사 객체 검색 (구현 중)
+                        VGG16 알고리즘을 이용한 유사 객체 검색
                     </div>
 
                 </div>
+
+                <div class="tooltip-container">
+
+                    <button type="button" class="btn btn-warning" onclick="submitForm('/search/LSH')">
+                        특징점 계산 by LSH
+                    </button>
+                    <div class="tooltip-text">
+                        <h5>이미지로 검색하기</h5>
+                        </br>
+                        LSH 알고리즘을 이용한 유사 객체 검색
+                    </div>
+
+                </div>
+
+
 
             </div>
 

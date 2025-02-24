@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import shop.RecommendSystem.dto.SearchResult;
 import shop.RecommendSystem.recommend.ImageFeature.PHash;
-import shop.RecommendSystem.recommend.ImageFeature.VGG16;
 import shop.RecommendSystem.recommend.ImageProcessing;
 
 import java.io.IOException;
@@ -26,31 +25,27 @@ public class SearchController {
 
     private final ImageProcessing imgCtrl;
     private final SearchService searchService;
-    private final VGG16 vgg16;
 
     @GetMapping("/findImg")
     public String findImg(Model model) {
         return "search/TestSearchForm";
     }
 
-    @PostMapping("/findImg")
+    @PostMapping("/{searchWay}")
     @ResponseBody
-    public Map<String, Object> findImg(@RequestParam("image") MultipartFile file,
-                                       @RequestParam("rgb") String palette) throws IOException {
+    public Map<String, Object> findImg(@PathVariable("searchWay") String searchWay,
+                                       @RequestParam("image") MultipartFile file,
+                                       @RequestParam("rgb") String palette) throws Exception {
         //이미지 특징 추출 후 저장
         Map<String, Object> response = new HashMap<>();
 
         if (!file.isEmpty()) {
 
             long beforeTime = System.currentTimeMillis();
+            List<SearchResult> results = searchService.searchSimilarItems(file, 10, searchWay);
+            log.info("searchSimilarItems: " + (System.currentTimeMillis()));
 
-            String hashValue = new PHash().getPHash(file);
-            log.info("hashValue: " + hashValue);
-            long beforeTime1 = System.currentTimeMillis();
-            List<SearchResult> results = searchService.searchSimilarItems(hashValue, 10);
-            log.info("searchSimilarItems: " + (System.currentTimeMillis() - beforeTime1));
-
-            response.put("hashValue", hashValue);
+            response.put("hashValue", searchWay);
             response.put("runTime", String.valueOf(System.currentTimeMillis() - beforeTime));
             response.put("items", results);
         }
@@ -66,58 +61,17 @@ public class SearchController {
         return response;
 
     }
-
-    @PostMapping("/findImgFeatureLSH")
-    @ResponseBody
-    public Map<String, Object> findImg1(@RequestParam("image") MultipartFile file,
-                                        @RequestParam("rgb") String palette) throws Exception {
-        //이미지 특징 추출 후 저장
-        Map<String, Object> response = new HashMap<>();
-
-        if (!file.isEmpty()) {
-
-            long beforeTime = System.currentTimeMillis();
-
-            Map<String, Object> req = vgg16.sendImageToFastAPI(file);
-
-            String order = (String) req.get("order");
-            byte[] feature = (byte[]) req.get("features");
-
-
-            long beforeTime1 = System.currentTimeMillis();
-            List<SearchResult> results = searchService.searchSimilarItems(order, feature, 10);
-            log.info("searchSimilarItems: " + (System.currentTimeMillis() - beforeTime1));
-
-            response.put("hashValue", "e1a16da596169366");
-            response.put("runTime", String.valueOf(System.currentTimeMillis() - beforeTime));
-            response.put("items", results);
-        }
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        int[] paletteArray = objectMapper.readValue(palette, int[].class);
-        String nearestColor = imgCtrl.getNearestColor(paletteArray);
-
-        log.info("nearestColor: " + nearestColor);
-
-        response.put("nearestColor", nearestColor);
-
-        return response;
-
-    }
-
 
     @PostMapping("/img")
     public String insert(
             @RequestParam("query") String query,
-            @RequestParam("imgFile") MultipartFile file, Model model) throws IOException {
+            @RequestParam("imgFile") MultipartFile file, Model model) throws Exception {
 
         log.info("query: " + query);
 
-        List<SearchResult> results = searchService.searchSimilarItems(new PHash().getPHash(file), 10);
+        List<SearchResult> results = searchService.searchSimilarItems(file, 10, "pHash");
         model.addAttribute("results", results);
 
         return "shop/itemMain";  // 템플릿 파일 경로
     }
-
-
 }

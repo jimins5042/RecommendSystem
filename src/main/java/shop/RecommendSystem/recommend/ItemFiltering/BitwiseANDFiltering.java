@@ -17,12 +17,11 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class PreFiltering {
+public class BitwiseANDFiltering {
 
     private final SearchMapper searchMapper;
 
     private ArrayList<PreFilterDto> list = new ArrayList<>();
-
 
     //프로젝트 시작시 실행
     @PostConstruct
@@ -130,7 +129,7 @@ public class PreFiltering {
             }
         }
         // 이미지 후보군의 수가 300개 이하거나, 더이상 탐색할 레이어 번호가 없다면 리스트를 반환
-        if (reducedList.size() <= 300 || num == 24) {
+        if (reducedList.size() <= 350 || num == 24) {
             return reducedList;
         } else {
             // 아니라면 탐색 범위를 더 줄이기
