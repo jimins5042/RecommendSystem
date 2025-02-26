@@ -37,39 +37,43 @@ public class SearchService {
      * 유사 이미지 검색 테스트 페이지에서
      * 여러 탐색 방법을 비교하는 함수
      *
-     * @param file : 질의 이미지
+     * @param file       : 질의 이미지
      * @param resultSize :  반환핳 검색 결과 수
-     * @param searchWay : 검색 방법
+     * @param searchWay  : 검색 방법
      * @return
      * @throws Exception
      */
 
     public List<SearchResult> searchSimilarItems(MultipartFile file, int resultSize, String searchWay) throws Exception {
         HashMap<String, Double> map = new HashMap<>();
-
+        long beforeTime = 0L;
         if (searchWay.equals("pHash")) {
 
             String hashValue = new PHash().getPHash(file);
+
+            beforeTime = System.currentTimeMillis();
             map = prefix.searchSimilarItem(hashValue);
 
         } else if (searchWay.equals("VGG16")) {
             Map<String, Object> req = vgg16.sendImageToFastAPI(file);
-
+            beforeTime = System.currentTimeMillis();
             String order = (String) req.get("order");
             byte[] feature = (byte[]) req.get("features");
 
-            map = filter.searchSimilarItem(order, feature);
+            //map = filter.searchSimilarItem(order, feature);
+
+            return filter.searchSimilarItem(order, feature, resultSize);
 
         } else if (searchWay.equals("LSH")) {
             Map<String, Object> req = vgg16.sendImageToFastAPI(file);
-
+            beforeTime = System.currentTimeMillis();
             String order = (String) req.get("order");
             byte[] feature = (byte[]) req.get("features");
 
             map = minHashFiltering.searchSimilarItem(order, feature);
 
         }
-        return searchSimilarItems(map, resultSize);
+        return searchSimilarItems(map, resultSize, beforeTime);
     }
 
     /**
@@ -79,7 +83,7 @@ public class SearchService {
      * @param resultSize : 반환할 탐색 결과 갯수
      * @return : 유사도가 큰 순으로 정렬된 상품 정보 데이터
      */
-    public List<SearchResult> searchSimilarItems(HashMap<String, Double> map, int resultSize) {
+    public List<SearchResult> searchSimilarItems(HashMap<String, Double> map, int resultSize, long beforeTime) {
 
         // 유사도를 기준으로 내림차 정렬
         ArrayList<String> keySet = new ArrayList<>(map.keySet());
@@ -98,26 +102,14 @@ public class SearchService {
                         //keySet.subList(0, keySet.size())
                 );
 
-        ExecutorService executor = Executors.newFixedThreadPool(10); // 최대 10개의 스레드를 사용
-        List<CompletableFuture<Void>> futures = results.stream()
-                .map(item -> CompletableFuture.runAsync(() -> {
-                    try {
-                        item.setHammingDistance(map.get(item.getImageUuid()));
-                        log.info("hamming = {}", item.getHammingDistance());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }, executor))  // Executor를 명시적으로 지정
-                .collect(Collectors.toList());
-
-        // 모든 작업이 완료될 때까지 기다림
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
-        executor.shutdown(); // 작업 완료 후 Executor 종료
+        for (SearchResult result : results) {
+            result.setHammingDistance(map.get(result.getImageUuid()));
+            log.info("hamming = {}", result.getHammingDistance());
+        }
 
         // DB에서 상품 정보를 반환 받을 때 uuid의 사전순으로 반환 받으므로, 유사도 순으로 재정렬
         results.sort((o1, o2) -> o2.getHammingDistance().compareTo(o1.getHammingDistance()));
-
+        log.info("time = {}", System.currentTimeMillis() - beforeTime);
         return results;
     }
 
@@ -133,12 +125,13 @@ public class SearchService {
     public List<SearchResult> searchSimilarItems(String hashcode, int resultSize) {
 
         HashMap<String, Double> map = prefix.searchSimilarItem(hashcode);
-        return searchSimilarItems(map, resultSize);
+        return searchSimilarItems(map, resultSize, 0L);
     }
 
     public List<SearchResult> searchSimilarItems(String order, byte[] feature, int resultSize) throws JsonProcessingException {
-
-        HashMap<String, Double> map = filter.searchSimilarItem(order, feature);
-        return searchSimilarItems(map, resultSize);
+        //HashMap<String, Double> map = minHashFiltering.searchSimilarItem(order, feature);
+        //HashMap<String, Double> map = filter.searchSimilarItemV1(order, feature);
+        return filter.searchSimilarItem(order, feature, resultSize);
+        //return searchSimilarItems(map, resultSize, 0L);
     }
 }

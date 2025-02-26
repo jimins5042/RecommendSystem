@@ -12,7 +12,7 @@ import java.util.Map;
 
 @Mapper
 public interface SearchMapper {
-    ArrayList<ImageInfo> findSearchLSHTarget();
+    ArrayList<ImageInfo> findSearchPHashTarget();
 
     List<SearchResult> findItemCandidates(List<String> keySet);
 
@@ -25,5 +25,9 @@ public interface SearchMapper {
     ArrayList<PreFilterDto> findPreFilterTarget(List<String> keySet);
 
     ArrayList<PreFilterDto> findLshTarget();
+
+    ArrayList<PreFilterDto> speedTest();
+
+    List<SearchResult> findPreFilterTargetV2(List<String> keySet);
 
 }

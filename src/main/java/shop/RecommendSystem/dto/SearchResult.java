@@ -3,7 +3,8 @@ package shop.RecommendSystem.dto;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter@Setter
+@Getter
+@Setter
 public class SearchResult {
 
     private Long itemId;
@@ -12,6 +13,7 @@ public class SearchResult {
     private String imageUrl;
     private String imageUuid;
     private Double hammingDistance;
+    private byte[] imgFeatureValue;
 
     public SearchResult() {
     }
@@ -23,5 +25,15 @@ public class SearchResult {
         this.imageUrl = imageUrl;
         this.imageUuid = imageUuid;
         this.hammingDistance = hammingDistance;
+    }
+
+    public SearchResult(Long itemId, String itemTitle, String itemPrice, String imageUrl, String imageUuid, Double hammingDistance, byte[] imgFeatureValue) {
+        this.itemId = itemId;
+        this.itemTitle = itemTitle;
+        this.itemPrice = itemPrice;
+        this.imageUrl = imageUrl;
+        this.imageUuid = imageUuid;
+        this.hammingDistance = hammingDistance;
+        this.imgFeatureValue = imgFeatureValue;
     }
 }

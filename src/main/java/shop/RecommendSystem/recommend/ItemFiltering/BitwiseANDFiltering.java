@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import shop.RecommendSystem.dto.PreFilterDto;
+import shop.RecommendSystem.dto.SearchResult;
 import shop.RecommendSystem.repository.mapper.SearchMapper;
 
 import java.util.ArrayList;
@@ -65,25 +66,30 @@ public class BitwiseANDFiltering {
      * @return : 이미지의 uuid와 유사도가 저장된 HashMap
      * @throws JsonProcessingException
      */
-    public HashMap searchSimilarItem(String layerList, byte[] targetBitArray) throws JsonProcessingException {
 
-        HashMap<String, Double> similarImage = new HashMap<>();
+    public List<SearchResult> searchSimilarItem(String layerList, byte[] targetBitArray, int resultSize) throws JsonProcessingException {
 
         // 1. 추출한 레이어의 크기 순서를 이용하여, 비교할 이미지 후보군의 수를 300개 이하로 줄임
         ArrayList<PreFilterDto> preprocess = preprocessList(layerList);
 
-        // 2. 이미지 후보군의 uuid만 추린다음 db에서 이미지의 특징점을 읽어옴
-        List<String> uuidList = preprocess.stream().map(PreFilterDto::getImageUuid).collect(Collectors.toList());
-        ArrayList<PreFilterDto> candidates = searchMapper.findPreFilterTarget(uuidList);
+        // 2. 이미지 후보군의 uuid만 추린다음 db에서 이미지의 특징점과 상품 데이터를 읽어옴
+        List<String> uuidList = preprocess.stream()
+                .map(PreFilterDto::getImageUuid)
+                .collect(Collectors.toList());
+
+        List<SearchResult> candidates = searchMapper.findPreFilterTargetV2(uuidList);
 
         // 3. 코사인 유사도를 이용하여 유사도 계산 후 저장
-        for (PreFilterDto candidate : candidates) {
-            similarImage.put(candidate.getImageUuid(), cosineSimilarity(targetBitArray, candidate.getImgFeatureValue()));
+        for (SearchResult candidate : candidates) {
+            candidate.setHammingDistance(cosineSimilarity(targetBitArray, candidate.getImgFeatureValue()));
+            //log.info("hamming = {}", candidate.getHammingDistance());
         }
 
-        System.out.println("vggnet");
+        // 4. DB에서 상품 정보를 반환 받을 때 uuid의 사전순으로 반환 받으므로, 유사도 순으로 재정렬
+        candidates.sort((o1, o2) -> o2.getHammingDistance().compareTo(o1.getHammingDistance()));
 
-        return similarImage;
+        // 5. 상위 {resultSize}개의 상품만 화면단으로 전달
+        return candidates.subList(0, (resultSize > candidates.size()) ? candidates.size() : resultSize);
     }
 
 
@@ -129,17 +135,18 @@ public class BitwiseANDFiltering {
             }
         }
         // 이미지 후보군의 수가 300개 이하거나, 더이상 탐색할 레이어 번호가 없다면 리스트를 반환
-        if (reducedList.size() <= 350 || num == 24) {
+        if (reducedList.size() <= 300 || num == 24) {
+            log.info("size = {}", reducedList.size());
             return reducedList;
         } else {
+            log.info("size = {}", reducedList.size());
             // 아니라면 탐색 범위를 더 줄이기
             return reduceScope(reducedList, layer, num + 1);
         }
     }
 
-
     // 코사인 유사도 계산 공식
-    public static double cosineSimilarity(byte[] A, byte[] B) {
+    public static double cosineSimilarityv1(byte[] A, byte[] B) {
         int dotProduct = 0;
         int normA = 0;
         int normB = 0;
@@ -153,5 +160,41 @@ public class BitwiseANDFiltering {
         if (normA == 0 || normB == 0) return 0;  // 벡터가 0인 경우 처리
         return (double) dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
     }
+
+    public static double cosineSimilarity(byte[] A, byte[] B) {
+        int intersection = 0;  // A ∩ B (교집합 크기)
+        int union = 0;         // A ∪ B (합집합 크기)
+
+        for (int i = 0; i < A.length; i++) {
+            intersection += Integer.bitCount(A[i] & B[i]);  // AND 후 1의 개수
+            union += Integer.bitCount(A[i] | B[i]);        // OR 후 1의 개수
+        }
+
+        if (union == 0) return 0;  // 합집합이 0이면 0 리턴
+        return (double) intersection / union;
+    }
+
+    public HashMap searchSimilarItemV1(String layerList, byte[] targetBitArray) throws JsonProcessingException {
+
+        HashMap<String, Double> similarImage = new HashMap<>();
+
+        // 1. 추출한 레이어의 크기 순서를 이용하여, 비교할 이미지 후보군의 수를 300개 이하로 줄임
+        ArrayList<PreFilterDto> preprocess = preprocessList(layerList);
+
+        // 2. 이미지 후보군의 uuid만 추린다음 db에서 이미지의 특징점을 읽어옴
+        List<String> uuidList = preprocess.stream()
+                .map(PreFilterDto::getImageUuid)
+                .collect(Collectors.toList());
+
+        ArrayList<PreFilterDto> candidates = searchMapper.findPreFilterTarget(uuidList);
+
+        // 3. 코사인 유사도를 이용하여 유사도 계산 후 저장
+        for (PreFilterDto candidate : candidates) {
+            similarImage.put(candidate.getImageUuid(), cosineSimilarity(targetBitArray, candidate.getImgFeatureValue()));
+        }
+
+        return similarImage;
+    }
+
 
 }

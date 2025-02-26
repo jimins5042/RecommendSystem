@@ -5,7 +5,7 @@
 <mapper namespace="shop.RecommendSystem.repository.mapper.SearchMapper">
 
     <!--글 상세 보기-->
-    <select id="findSearchLSHTarget" resultType="ImageInfo">
+    <select id="findSearchPHashTarget" resultType="ImageInfo">
         SELECT image_uuid,
                image_hash_code
         FROM image_info
@@ -18,16 +18,34 @@
     </select>
 
 
-    <select id="findPreFilterTarget" parameterType="list" resultType="PreFilterDto">
+    <select id="findPreFilterTargetV2" parameterType="list" resultType="SearchResult">
         SELECT
-        image_uuid, img_feature_value
+        s.item_id, s.item_title, s.item_price, i.image_url, i.image_uuid, i.img_feature_value as imgFeatureValue
         FROM
-        image_info
-        WHERE
-        image_uuid IN
-        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
-            #{item}
+        shop_board AS s
+        INNER JOIN
+        image_info AS i
+        ON
+        s.item_image_link = i.image_uuid
+        INNER JOIN (
+        <foreach collection="list" item="item" separator=" UNION ALL ">
+            SELECT #{item} AS image_uuid
         </foreach>
+        ) AS temp_table
+        ON i.image_uuid = temp_table.image_uuid;
+
+    </select>
+
+    <select id="findPreFilterTarget" parameterType="list" resultType="PreFilterDto">
+        SELECT image_uuid, img_feature_value
+        FROM image_info
+        WHERE image_uuid IN (
+        SELECT image_uuid FROM (
+        <foreach collection="list" item="item" separator=" UNION ALL ">
+            SELECT #{item} AS image_uuid
+        </foreach>
+        ) AS temp_table
+        )
     </select>
 
     <select id="findLshTarget" resultType="PreFilterDto">
@@ -37,7 +55,27 @@
     </select>
 
     <!-- SELECT 쿼리 -->
+
     <select id="findItemCandidates" parameterType="list" resultType="SearchResult">
+        SELECT
+        s.item_id, s.item_title, s.item_price, i.image_url, i.image_uuid
+        FROM
+        shop_board AS s
+        INNER JOIN
+        image_info AS i
+        ON
+        s.item_image_link = i.image_uuid
+        INNER JOIN (
+        <foreach collection="list" item="item" separator=" UNION ALL ">
+            SELECT #{item} AS image_uuid
+        </foreach>
+        ) AS temp_table
+        ON i.image_uuid = temp_table.image_uuid;
+
+    </select>
+
+
+    <select id="findItemCandidatesV1" parameterType="list" resultType="SearchResult">
         SELECT
         s.item_id, s.item_title, s.item_price, i.image_url, i.image_uuid
         FROM
@@ -47,10 +85,14 @@
         ON
         s.item_image_link = i.image_uuid
         WHERE
-        i.image_uuid IN
-        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
-            #{item}
+        i.image_uuid IN(
+        SELECT image_uuid FROM (
+        <foreach collection="list" item="item" separator=" UNION ALL ">
+            SELECT #{item} AS image_uuid
         </foreach>
+        ) AS temp_table
+        )
+
     </select>
 
     <update id="updatePHash" parameterType="Map">
@@ -69,5 +111,14 @@
         FROM image_info
     </select>
 
+
+    <select id="speedTest" resultType="PreFilterDto">
+        SELECT image_uuid,
+               img_feature_order as featureOrder,
+               img_feature_value as imgFeatureValue
+        FROM image_info
+        order by image_id desc
+        limit 20;
+    </select>
 
 </mapper>

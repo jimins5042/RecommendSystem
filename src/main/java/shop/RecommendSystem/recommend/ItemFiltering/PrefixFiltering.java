@@ -26,7 +26,7 @@ public class PrefixFiltering {
     //프로젝트 시작시 실행
     @PostConstruct
     public void initializeSearchData() {
-        ArrayList<ImageInfo> images = searchMapper.findSearchLSHTarget();
+        ArrayList<ImageInfo> images = searchMapper.findSearchPHashTarget();
 
         //객체 안에는 imageUuid, imageHashCode가 존재
         for (ImageInfo image : images) {

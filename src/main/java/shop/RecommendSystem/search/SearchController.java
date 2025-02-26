@@ -43,7 +43,6 @@ public class SearchController {
 
             long beforeTime = System.currentTimeMillis();
             List<SearchResult> results = searchService.searchSimilarItems(file, 10, searchWay);
-            log.info("searchSimilarItems: " + (System.currentTimeMillis()));
 
             response.put("hashValue", searchWay);
             response.put("runTime", String.valueOf(System.currentTimeMillis() - beforeTime));

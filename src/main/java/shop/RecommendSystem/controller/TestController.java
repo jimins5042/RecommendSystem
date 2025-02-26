@@ -5,9 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import shop.RecommendSystem.dto.Item;
+import shop.RecommendSystem.dto.PreFilterDto;
 import shop.RecommendSystem.repository.ShopRepository;
+import shop.RecommendSystem.repository.mapper.SearchMapper;
+import shop.RecommendSystem.search.SearchService;
 import shop.RecommendSystem.shoppingMall.ShopService;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -17,21 +21,25 @@ import java.util.List;
 public class TestController {
     private final ShopRepository shopRepository;
     private final ShopService shopService;
+    private final SearchMapper searchMapper;
+private final SearchService searchService;
 
     @GetMapping("/update")
     public void UpdatePhash() throws Exception {
 
-        HashMap<String, Integer> map = new HashMap<>();
-        List<Item> items = shopRepository.findThumbnailAll(0L, 7200L);
+        ArrayList<PreFilterDto> list = searchMapper.speedTest();
 
-        for(Item item : items) {
-            if(map.get(item.getItemTitle()) == null) {
-                map.put(item.getItemTitle(), 1);
-            }else{
-                shopRepository.deleteItem(item.getItemId());
-                log.info("delete item num : {}", item.getItemId());
-            }
+        long sum = 0L;
+        for(PreFilterDto preFilterDto : list){
+            long start = System.nanoTime();
+            searchService.searchSimilarItems(preFilterDto.getFeatureOrder(), preFilterDto.getImgFeatureValue(), 10);
+            long end = System.nanoTime() - start;
+            System.out.println("Execution Time: " + end + " ns");
+            sum += end;
         }
+
+        System.out.println(sum / 20 + " ns");
+
     }
 
 
