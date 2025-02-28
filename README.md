@@ -6,8 +6,7 @@
 - ANN 탐색 방법을 통해 일정 수준의 정확도를 유지하면서 성능 최적화를 진행
 
 # 주요 로직
-![흐름도 drawio](https://github.com/user-attachments/assets/baa60c14-99d2-4e7e-b7e4-1715dccce7f2)
-
+![제목 없는 다이어그램 drawio (1)](https://github.com/user-attachments/assets/4fc08e0d-bc6f-4428-82a8-96df0f58999a)
 
 유사 이미지 검색 기반 추천 로직
 1. 특성 추출
