@@ -81,7 +81,7 @@ public class BitwiseANDFiltering {
 
         // 3. 코사인 유사도를 이용하여 유사도 계산 후 저장
         for (SearchResult candidate : candidates) {
-            candidate.setHammingDistance(cosineSimilarity(targetBitArray, candidate.getImgFeatureValue()));
+            candidate.setHammingDistance(jaccardSimilarity(targetBitArray, candidate.getImgFeatureValue()));
             //log.info("hamming = {}", candidate.getHammingDistance());
         }
 
@@ -134,19 +134,34 @@ public class BitwiseANDFiltering {
                 reducedList.add(preFilterDto);
             }
         }
+
+        log.info("size = {}", reducedList.size());
         // 이미지 후보군의 수가 300개 이하거나, 더이상 탐색할 레이어 번호가 없다면 리스트를 반환
         if (reducedList.size() <= 300 || num == 24) {
-            log.info("size = {}", reducedList.size());
             return reducedList;
         } else {
-            log.info("size = {}", reducedList.size());
             // 아니라면 탐색 범위를 더 줄이기
             return reduceScope(reducedList, layer, num + 1);
         }
     }
 
+
+    //자카드 유사도 계산 공식
+    public static double jaccardSimilarity(byte[] A, byte[] B) {
+        int intersection = 0;  // A ∩ B (교집합 크기)
+        int union = 0;         // A ∪ B (합집합 크기)
+
+        for (int i = 0; i < A.length; i++) {
+            intersection += Integer.bitCount(A[i] & B[i]);  // AND 후 1의 개수
+            union += Integer.bitCount(A[i] | B[i]);        // OR 후 1의 개수
+        }
+
+        if (union == 0) return 0;  // 합집합이 0이면 0 리턴
+        return (double) intersection / union;
+    }
+
     // 코사인 유사도 계산 공식
-    public static double cosineSimilarityv1(byte[] A, byte[] B) {
+    public static double cosineSimilarity(byte[] A, byte[] B) {
         int dotProduct = 0;
         int normA = 0;
         int normB = 0;
@@ -159,19 +174,6 @@ public class BitwiseANDFiltering {
 
         if (normA == 0 || normB == 0) return 0;  // 벡터가 0인 경우 처리
         return (double) dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-    }
-
-    public static double cosineSimilarity(byte[] A, byte[] B) {
-        int intersection = 0;  // A ∩ B (교집합 크기)
-        int union = 0;         // A ∪ B (합집합 크기)
-
-        for (int i = 0; i < A.length; i++) {
-            intersection += Integer.bitCount(A[i] & B[i]);  // AND 후 1의 개수
-            union += Integer.bitCount(A[i] | B[i]);        // OR 후 1의 개수
-        }
-
-        if (union == 0) return 0;  // 합집합이 0이면 0 리턴
-        return (double) intersection / union;
     }
 
     public HashMap searchSimilarItemV1(String layerList, byte[] targetBitArray) throws JsonProcessingException {
@@ -190,7 +192,7 @@ public class BitwiseANDFiltering {
 
         // 3. 코사인 유사도를 이용하여 유사도 계산 후 저장
         for (PreFilterDto candidate : candidates) {
-            similarImage.put(candidate.getImageUuid(), cosineSimilarity(targetBitArray, candidate.getImgFeatureValue()));
+            similarImage.put(candidate.getImageUuid(), jaccardSimilarity(targetBitArray, candidate.getImgFeatureValue()));
         }
 
         return similarImage;

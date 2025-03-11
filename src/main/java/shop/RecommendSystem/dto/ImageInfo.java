@@ -9,15 +9,15 @@ import java.util.Date;
 @Setter
 public class ImageInfo {
 
-    int imageId;
-    String imageUuid;
-    String imageOriginalName;
-    String imageUrl;
-    String imageHashCode;
-    String imgFeatureValue;
-    String imagePhashV1;
-    Date createdAt;
-    Date updatedAt;
+    private int imageId;
+    private String imageUuid;
+    private String imageOriginalName;
+    private String imageUrl;
+    private String imageHashCode;
+    private String imgFeatureValue;
+    private String imagePhashV1;
+    private Date createdAt;
+    private Date updatedAt;
 
     public ImageInfo() {
     }
