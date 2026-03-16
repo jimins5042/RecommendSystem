@@ -30,7 +30,6 @@ public class BitwiseANDFiltering {
         ArrayList<PreFilterDto> images = searchMapper.findReduceTarget();
 
         for (PreFilterDto image : images) {
-
             PreFilterDto preFilter = PreFilterDto.builder()
                     .imageUuid(image.getImageUuid())
                     .layerOrderList(addSearchData(image.getFeatureOrder()))

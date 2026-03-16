@@ -1,11 +1,13 @@
 package shop.RecommendSystem.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Date;
-
-@Getter@Setter
+@AllArgsConstructor
+@Getter@Setter@Builder
 public class Item {
     private Long itemId;
     private String itemTitle;
@@ -38,16 +40,6 @@ public class Item {
         this.hashCode = hashCode;
     }
 
-    public Item(Long itemId, String itemTitle, String itemContent, Date itemDate, Long itemPrice, String itemImageLink, String hashCode, byte[] bitArray) {
-        this.itemId = itemId;
-        this.itemTitle = itemTitle;
-        this.itemContent = itemContent;
-        this.itemDate = itemDate;
-        this.itemPrice = itemPrice;
-        this.itemImageLink = itemImageLink;
-        this.hashCode = hashCode;
-        this.bitArray = bitArray;
-    }
 }
 
 

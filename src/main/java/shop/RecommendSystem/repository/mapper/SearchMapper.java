@@ -16,6 +16,8 @@ public interface SearchMapper {
 
     List<SearchResult> findItemCandidates(List<String> keySet);
 
+    int updateImageInfo(ImageInfo imageInfo);
+
     ArrayList<ImageInfo> findSearchUpdateTarget();
 
     void updatePHash(Map<String, String> map);

@@ -2,12 +2,14 @@ package shop.RecommendSystem.recommend;
 
 import lombok.extern.slf4j.Slf4j;
 import org.imgscalr.Scalr;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import shop.RecommendSystem.dto.ColorTag;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.net.URL;
 import java.util.Base64;
 
@@ -15,10 +17,14 @@ import java.util.Base64;
 @Slf4j
 public class ImageProcessing {
 
+    @Value("${hostInfo}")
+    private String hostInfo;
+
     public String cropAndResizeImage(String imageUrl, int targetWidth, int targetHeight, int resizeType) throws Exception {
         // S3 URL에서 이미지 다운로드
 
-        URL url = new URL(imageUrl);
+        URL url = new URL(hostInfo + imageUrl);
+
         BufferedImage originalImage = ImageIO.read(url);
 
         Scalr.Method m;

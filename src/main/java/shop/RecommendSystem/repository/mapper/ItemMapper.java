@@ -25,6 +25,9 @@ CREATE TABLE image_info (
     image_hash_code VARCHAR(64) NOT NULL, -- 개선된 pHash를 통한 이미지 해시 값
     img_feature_value VARCHAR(256) NOT NULL, -- 이미지 특징점을 비트플래그로 저장한 다음, 16진수로 변환한 값
     image_phash_v1 VARCHAR(64) NULL, -- pHash를 통한 이미지 해시 값
+
+    img_feature_order VARCHAR2(1000), -- 리랭킹시 탐색 범위를 줄이기 위한 값
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 생성 시간
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- 갱신 시간
 );
@@ -50,6 +53,7 @@ public interface ItemMapper {
 
     //게시글 상세 보기
     Item findById(Long id);
+    Item findById1(Long id);
 
     //전체 게시글 리스트 탐색
     List<Item> findAll(Map<String, Long> map);

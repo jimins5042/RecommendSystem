@@ -5,22 +5,31 @@
 <mapper namespace="shop.RecommendSystem.repository.mapper.ItemMapper">
 
     <!--아이템 객체의 속성 값들을 넣어줌-->
-    <insert id="save" useGeneratedKeys="true" keyProperty="itemId" parameterType="Item">
-        INSERT INTO shop_board (item_title, item_content, item_price, item_image_link)
-        VALUES (#{itemTitle}, #{itemContent}, #{itemPrice}, #{itemImageLink})
+    <insert id="save" parameterType="Item">
+        <selectKey keyProperty="itemId" resultType="long" order="BEFORE">
+            SELECT shop_board_seq.NEXTVAL FROM dual
+        </selectKey>
+        INSERT INTO shop_board (item_id, item_title, item_content, item_price, item_image_link)
+        VALUES (#{itemId},#{itemTitle}, #{itemContent}, #{itemPrice}, #{itemImageLink})
     </insert>
 
 
-    <insert id="insertImageInfo" useGeneratedKeys="true" keyProperty="imageId" parameterType="shop.RecommendSystem.dto.ImageInfo">
-        INSERT INTO image_info (image_uuid, image_original_name, image_url, image_hash_code)
-        VALUES (#{imageUuid}, #{imageOriginalName}, #{imageUrl}, #{imageHashCode})
+    <insert id="insertImageInfo" parameterType="shop.RecommendSystem.dto.ImageInfo">
+        <selectKey keyProperty="imageId" resultType="long" order="BEFORE">
+            SELECT image_info_seq.NEXTVAL FROM dual
+        </selectKey>
+        INSERT INTO image_info (image_id, image_uuid, image_original_name, image_url, image_hash_code)
+        VALUES (#{imageId}, #{imageUuid}, #{imageOriginalName}, #{imageUrl}, #{imageHashCode})
     </insert>
 
 
-    <insert id="insertImgColorTag" useGeneratedKeys="true" keyProperty="imageColorId" parameterType="Map">
+    <insert id="insertImgColorTag" parameterType="Map">
+        <selectKey keyProperty="imageColorId" resultType="long" order="BEFORE">
+            SELECT image_color_tag_seq.NEXTVAL FROM dual
+        </selectKey>
         INSERT
-        IGNORE INTO image_color_tag (image_color_uuid, color_tag)
-        VALUES(#{uuid}, #{tag})
+        IGNORE INTO image_color_tag (image_color_id, image_color_uuid, color_tag)
+        VALUES(#{imageColorId}, #{uuid}, #{tag})
     </insert>
 
 
@@ -36,12 +45,12 @@
                i.img_feature_order as hashCode,
                i.img_feature_value as bitArray
 
-        FROM shop_board AS s
+        FROM shop_board s
                  LEFT JOIN
-             image_info AS i
+             image_info i
              ON
                  s.item_image_link = i.image_uuid
-        WHERE s.item_id = #{id};
+        WHERE s.item_id = #{id}
     </select>
 
     <select id="findByIdToPhash" parameterType="Long" resultType="Item">
@@ -53,36 +62,42 @@
                s.item_price,
                i.image_url       as item_image_link,
                i.image_hash_code as hashCode
-        FROM shop_board AS s
+        FROM shop_board s
                  LEFT JOIN
-             image_info AS i
+             image_info i
              ON
                  s.item_image_link = i.image_uuid
-        WHERE s.item_id = #{id};
+        WHERE s.item_id = #{id}
     </select>
     <!--글 목록 및 글 관리-->
     <select id="findAll" resultType="Item" parameterType="Map">
+
+        SELECT * FROM (
+        SELECT T.*, ROWNUM AS rn FROM (
         SELECT item_id,
-               item_title,
-               item_date
+        item_title,
+        item_date
         FROM shop_board
         ORDER BY item_id desc
-            LIMIT #{offset}, #{size}
+        ) T WHERE ROWNUM &lt;= (#{offset}+1) * #{size}
+        ) WHERE rn &gt; #{offset}  * #{size}
+
     </select>
 
     <select id="findThumbnailAll" resultType="Item" parameterType="Map">
-        SELECT s.item_id,
-               s.item_title,
-               s.item_price,
-               i.image_url as item_image_link
-        FROM shop_board as s
-                 LEFT JOIN
-             image_info AS i
-             ON
-                 s.item_image_link = i.image_uuid
-        where s.item_image_link is not null
-            LIMIT #{offset}
-            , #{size}
+        SELECT * FROM (
+          SELECT T.*, ROWNUM AS rn FROM (
+                SELECT s.item_id,
+                       s.item_title,
+                       s.item_price,
+                       i.image_url AS item_image_link
+                FROM shop_board s
+                         LEFT JOIN image_info i
+                                   ON s.item_image_link = i.image_uuid
+                WHERE s.item_image_link IS NOT NULL
+                ORDER BY s.item_id DESC
+            ) T WHERE ROWNUM &lt;= (#{offset}+1) * #{size}
+      ) WHERE rn &gt; #{offset} * #{size}
     </select>
 
     <select id="countItems" resultType="long">
@@ -93,12 +108,32 @@
     <delete id="delete" parameterType="Long">
         DELETE
         s, i, c
-            FROM shop_board AS s
-            LEFT JOIN image_info AS i
+            FROM shop_board s
+            LEFT JOIN image_info i
                 ON s.item_image_link = i.image_uuid
-            LEFT JOIN image_color_tag AS c
+            LEFT JOIN image_color_tag c
                 ON s.item_image_link = c.image_color_uuid
-            WHERE s.item_id =#{id};
+            WHERE s.item_id =#{id}
     </delete>
+
+
+    <select id="findById1" parameterType="Long" resultType="Item">
+
+        SELECT s.item_id,
+               s.item_title,
+               s.item_content,
+               s.item_date,
+               s.item_price,
+               i.image_uuid         as item_image_link,
+               i.img_feature_order as hashCode,
+               i.img_feature_value as bitArray
+
+        FROM shop_board s
+                 LEFT JOIN
+             image_info i
+             ON
+                 s.item_image_link = i.image_uuid
+        WHERE s.item_id = #{id}
+    </select>
 
 </mapper>

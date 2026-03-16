@@ -1,9 +1,6 @@
 package shop.RecommendSystem.shoppingMall;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,10 +11,7 @@ import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.dto.Page;
 import shop.RecommendSystem.dto.Reply;
 import shop.RecommendSystem.dto.SearchResult;
-import shop.RecommendSystem.recommend.ImageFeature.VGG16;
 import shop.RecommendSystem.repository.ShopRepository;
-import shop.RecommendSystem.repository.mapper.ItemMapper;
-import shop.RecommendSystem.repository.mapper.SearchMapper;
 import shop.RecommendSystem.search.SearchService;
 
 import java.io.IOException;
@@ -25,25 +19,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-@Getter
-@Setter
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/shop")
 public class ShopController {
 
-    private final UploadService uploadService;
     private final ShopService shopService;
-    private final SearchService searchService;
     private final ReplyService replyService;
-
     private final ShopRepository shopRepository;
+    private final SearchService searchService;
 
-    private final ItemMapper itemMapper;
-    private final SearchMapper searchMapper;
 
-    
-    @GetMapping("/itemList")
+    @GetMapping("/shop/itemList")
     public String shopItemList(
             @RequestParam(value = "page", defaultValue = "1") Long page,
             Model model) {
@@ -65,7 +51,7 @@ public class ShopController {
         return "shop/itemList";  // 템플릿 파일 경로
     }
 
-    @GetMapping("/main")
+    @GetMapping("/shop/main")
     public String shopMain(
             @RequestParam(value = "page", defaultValue = "1") Long page,
             Model model) {
@@ -88,62 +74,64 @@ public class ShopController {
         return "shop/itemMain";  // 템플릿 파일 경로
     }
 
-    @GetMapping("/addItem")
-    public String insertItem(Model model) {
+    @GetMapping("/shop/detail/{id}")
+    public String showItem(@PathVariable("id") Long id, Model model) {
 
-        model.addAttribute("itemForm", new Item());
-        return "shop/insertItem";
-    }
 
-    @PostMapping("/addItem")
-    public String insert(@ModelAttribute Item itemForm,
-                         @RequestParam("imgFile") MultipartFile file,
-                         @RequestParam("palette") String palette,
-                         RedirectAttributes redirectAttributes) throws IOException {
+        try {
+            log.info("=== 이미지 상세 조회 ===");
 
-        redirectAttributes.addAttribute("productId", shopService.insertItem(itemForm, file, palette));
-        return "redirect:shop/detail/{productId}";
+            // 상품 정보 조회
+            Item item = shopRepository.findById(id);
 
-    }
-
-    @GetMapping("/detail/{id}")
-    public String showItem(@PathVariable("id") Long id, Model model) throws Exception {
-        log.info("=== 이미지 상세 조회 ===");
-
-        // 상품 정보 조회
-        Item item = shopRepository.findById(id);
-
-        //추천 상품 조회
-        if (item.getHashCode() != null) {
-            //List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), 8);
-            List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(),item.getBitArray(), 8);
-            model.addAttribute("results", results);
-        }
-
-        //댓글 조회
-        ArrayList<Reply> replies = replyService.getReplies(id);
-
-        if(replies.size() > 0) {
-            for(Reply reply : replies) {
-                log.info(reply.getReplyContent());
+            //추천 상품 조회
+            if (item.getHashCode() != null) {
+                //List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), 8);
+                List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), item.getBitArray(), 8);
+                model.addAttribute("results", results);
             }
-        }
 
-        model.addAttribute("postId", id);
-        model.addAttribute("item", item);
-        model.addAttribute("replies", replies);
+            //댓글 조회
+            ArrayList<Reply> replies = replyService.getReplies(id);
+
+            if (replies.size() > 0) {
+                for (Reply reply : replies) {
+                    log.info(reply.getReplyContent());
+                }
+            }
+
+            model.addAttribute("postId", id);
+            model.addAttribute("item", item);
+            model.addAttribute("replies", replies);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         return "shop/showItem";
     }
 
-    @GetMapping("/delete/{id}")
+    @GetMapping("/shop/addItemPage")
+    public String addItemPage() {
+        return "shop/insertItem";
+    }
+
+    @PostMapping("/shop/addItemAction")
+    public String addItemAction(@ModelAttribute Item itemForm, @RequestParam("imgFile") MultipartFile file) throws IOException {
+
+        Long productId = shopService.insertItem(itemForm, file);
+
+        return "redirect:shop/detail/" + productId;
+
+    }
+
+    @GetMapping("/shop/delete/{id}")
     public String deleteItem(@PathVariable("id") Long id, Model model) {
         shopRepository.deleteItem(id);
 
         return "shop/itemList";
     }
 
-    @GetMapping("/{id}/showReplyList")
+    @GetMapping("/shop/{id}/showReplyList")
     public String showReplyList(@PathVariable("id") Long id, Model model) {
 
         List<Reply> list = new ArrayList<>();
@@ -152,7 +140,7 @@ public class ShopController {
         return "shop/insertItem";
     }
 
-    @PostMapping("/saveReply/{id}")
+    @PostMapping("/shop/saveReply/{id}")
     public String addReply(
             @PathVariable("id") Long id,
             @ModelAttribute Reply replyForm,

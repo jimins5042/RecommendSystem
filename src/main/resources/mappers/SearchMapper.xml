@@ -4,6 +4,10 @@
 <!--ItemMapper의 위치를 적어줌-->
 <mapper namespace="shop.RecommendSystem.repository.mapper.SearchMapper">
 
+    <resultMap id="imageResultMap" type="ImageInfo">
+        <result column="IMG_FEATURE_VALUE" property="bitarray"/>
+    </resultMap>
+
     <!--글 상세 보기-->
     <select id="findSearchPHashTarget" resultType="ImageInfo">
         SELECT image_uuid,
@@ -21,18 +25,16 @@
     <select id="findPreFilterTargetV2" parameterType="list" resultType="SearchResult">
         SELECT
         s.item_id, s.item_title, s.item_price, i.image_url, i.image_uuid, i.img_feature_value as imgFeatureValue
-        FROM
-        shop_board AS s
-        INNER JOIN
-        image_info AS i
-        ON
-        s.item_image_link = i.image_uuid
-        INNER JOIN (
-        <foreach collection="list" item="item" separator=" UNION ALL ">
-            SELECT #{item} AS image_uuid
+        FROM shop_board s
+        INNER JOIN image_info i
+        ON s.item_image_link = i.image_uuid
+
+        WHERE 1=1
+        and i.image_uuid in (
+        <foreach collection="list" item="item" separator=", ">
+            #{item}
         </foreach>
-        ) AS temp_table
-        ON i.image_uuid = temp_table.image_uuid;
+        )
 
     </select>
 
@@ -40,11 +42,9 @@
         SELECT image_uuid, img_feature_value
         FROM image_info
         WHERE image_uuid IN (
-        SELECT image_uuid FROM (
-        <foreach collection="list" item="item" separator=" UNION ALL ">
-            SELECT #{item} AS image_uuid
+        <foreach collection="list" item="item" separator=", ">
+            #{item}
         </foreach>
-        ) AS temp_table
         )
     </select>
 
@@ -60,18 +60,16 @@
         SELECT
         s.item_id, s.item_title, s.item_price, i.image_url, i.image_uuid
         FROM
-        shop_board AS s
+        shop_board s
         INNER JOIN
-        image_info AS i
+        image_info i
         ON
         s.item_image_link = i.image_uuid
-        INNER JOIN (
-        <foreach collection="list" item="item" separator=" UNION ALL ">
-            SELECT #{item} AS image_uuid
+        WHERE i.image_uuid IN (
+        <foreach collection="list" item="item" separator=", ">
+            #{item}
         </foreach>
-        ) AS temp_table
-        ON i.image_uuid = temp_table.image_uuid;
-
+        )
     </select>
 
 
@@ -79,9 +77,9 @@
         SELECT
         s.item_id, s.item_title, s.item_price, i.image_url, i.image_uuid
         FROM
-        shop_board AS s
+        shop_board s
         LEFT JOIN
-        image_info AS i
+        image_info i
         ON
         s.item_image_link = i.image_uuid
         WHERE
@@ -90,7 +88,7 @@
         <foreach collection="list" item="item" separator=" UNION ALL ">
             SELECT #{item} AS image_uuid
         </foreach>
-        ) AS temp_table
+        ) temp_table
         )
 
     </select>
@@ -103,6 +101,28 @@
 
     </update>
 
+    <update id="updateImageInfo" parameterType="ImageInfo">
+
+        UPDATE image_info
+
+        <set>
+            <if test="imageHashCode != null">
+                IMAGE_HASH_CODE = #{imageHashCode},
+            </if>
+            <if test="imgFeatureValue != null">
+                IMG_FEATURE_VALUE = #{imgFeatureValue,jdbcType=BLOB},
+            </if>
+            <if test="imgFeatureOrder != null">
+                IMG_FEATURE_ORDER = #{imgFeatureOrder},
+            </if>
+
+        </set>
+        where image_uuid = #{imageUuid}
+
+    </update>
+
+
+
     <select id="findSearchUpdateTarget" resultType="ImageInfo">
         SELECT image_uuid,
                image_original_name,
@@ -113,12 +133,13 @@
 
 
     <select id="speedTest" resultType="PreFilterDto">
-        SELECT image_uuid,
-               img_feature_order as featureOrder,
-               img_feature_value as imgFeatureValue
+        SELECT * FROM
+        (SELECT image_uuid,
+        img_feature_order as featureOrder,
+        img_feature_value as imgFeatureValue
         FROM image_info
-        order by image_id desc
-        limit 20;
+        order by image_id desc)
+        WHERE ROWNUM &lt; 20
     </select>
 
 </mapper>

@@ -7,12 +7,16 @@
     <!--글 상세 보기-->
     <select id="selectReplyList" resultType="Reply" parameterType="Long" >
         SELECT *
-        FROM reply_board where post_id = #{postId};
+        FROM reply_board where post_id = #{postId}
     </select>
 
-    <insert id="saveReply" useGeneratedKeys="true" keyProperty="replyId" parameterType="Reply">
-        INSERT INTO reply_board (post_id, reply_writer, reply_password, reply_content)
-        VALUES (#{postId}, #{replyWriter}, #{replyPassword}, #{replyContent})
+    <insert id="saveReply" parameterType="Reply">
+        <selectKey keyProperty="replyId" resultType="long" order="BEFORE">
+            SELECT image_color_tag_seq.NEXTVAL FROM dual
+        </selectKey>
+
+        INSERT INTO reply_board (reply_id, post_id, reply_writer, reply_password, reply_content)
+        VALUES (#{replyId},#{postId}, #{replyWriter}, #{replyPassword}, #{replyContent})
     </insert>
 
 </mapper>

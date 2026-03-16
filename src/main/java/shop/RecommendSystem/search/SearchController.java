@@ -20,33 +20,24 @@ import java.util.Map;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/search")
 public class SearchController {
 
     private final ImageProcessing imgCtrl;
     private final SearchService searchService;
 
-    @GetMapping("/findImg")
+    @GetMapping("/search/findImg")
     public String findImg(Model model) {
         return "search/TestSearchForm";
     }
 
-    @PostMapping("/{searchWay}")
+    @PostMapping("/search/{searchWay}")
     @ResponseBody
     public Map<String, Object> findImg(@PathVariable("searchWay") String searchWay,
                                        @RequestParam("image") MultipartFile file,
                                        @RequestParam("rgb") String palette) throws Exception {
-        //이미지 특징 추출 후 저장
-        Map<String, Object> response = new HashMap<>();
 
-        if (!file.isEmpty()) {
-
-            long beforeTime = System.currentTimeMillis();
-            List<SearchResult> results = searchService.searchSimilarItems(file, 10, searchWay);
-
-            response.put("hashValue", searchWay);
-            response.put("runTime", String.valueOf(System.currentTimeMillis() - beforeTime));
-            response.put("items", results);
+        if (file.isEmpty()) {
+            return null;
         }
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -55,13 +46,21 @@ public class SearchController {
 
         log.info("nearestColor: " + nearestColor);
 
-        response.put("nearestColor", nearestColor);
+        long beforeTime = System.currentTimeMillis();
+        List<SearchResult> results = searchService.searchSimilarItems(file, 10, searchWay);
+
+        //이미지 특징 추출 후 저장
+        Map<String, Object> response = Map.of(
+                "hashValue", searchWay,
+                "runTime", String.valueOf(System.currentTimeMillis() - beforeTime),
+                "items", results,
+                "nearestColor", nearestColor
+        );
 
         return response;
-
     }
 
-    @PostMapping("/img")
+    @PostMapping("/search/img")
     public String insert(
             @RequestParam("query") String query,
             @RequestParam("imgFile") MultipartFile file, Model model) throws Exception {

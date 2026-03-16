@@ -24,26 +24,52 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
-    implementation 'org.mariadb.jdbc:mariadb-java-client:3.1.4'
-    implementation 'io.github.cdimascio:dotenv-java:2.2.0'
-    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.1.RELEASE'
-    implementation group: 'net.coobird', name: 'thumbnailator', version: '0.4.20'
-    implementation 'org.imgscalr:imgscalr-lib:4.2'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    //implementation 'org.springframework.boot:spring-boot-devtools'
 
-    implementation 'com.google.guava:guava:32.1.2-jre' // 최신 버전 확인
+    // Spring
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'com.oracle.database.security:oraclepki:23.4.0.24.05'
+    implementation 'com.oracle.database.security:osdt_core:21.9.0.0'
+    implementation 'com.oracle.database.security:osdt_cert:21.9.0.0'
+    // MyBatis
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
+
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'io.projectreactor:reactor-core'  // SSE용 Flux 지원 (webflux 대신 reactor-core만 사용)
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
+
+    // Oracle JDBC
+    runtimeOnly 'com.oracle.database.jdbc:ojdbc11:23.4.0.24.05'
+
+    // Wallet / 환경변수
+    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+
+    // 이미지 처리
+    implementation 'net.coobird:thumbnailator:0.4.21'
+    implementation 'org.imgscalr:imgscalr-lib:4.2'
+
+    // 유틸
+    implementation 'com.google.guava:guava:33.2.1-jre'
     implementation 'info.debatty:java-lsh:0.12'
 
+    // Lombok
     compileOnly 'org.projectlombok:lombok'
-    runtimeOnly 'com.mysql:mysql-connector-j'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // Dev
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.4'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2024.0.0"
+    }
 }
 
 tasks.named('test') {
