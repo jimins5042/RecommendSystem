@@ -1,260 +1,267 @@
 <!DOCTYPE HTML>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="~{fragments/header :: header('글 상세 보기')}"></head>
-
-<style>
-
-    tr:hover {
-        background-color: #f1f1f1;
-        cursor: pointer;
-    }
-
-    .container {
-        position: relative;
-    }
-
-    #scrollWrapper {
-        display: flex;
-        gap: 1rem;
-        overflow-x: scroll;
-        white-space: nowrap;
-        padding: 10px;
-        -webkit-overflow-scrolling: touch;
-        width: 100%; /* 가로 폭을 부모 요소에 맞춤 */
-        min-width: 1000px; /* 내부 요소 크기에 맞게 조절 */
-        max-width: 1060px; /* (250px * 4) + gap 고려 */
-        margin: 0 auto;
-    }
-
-    #scrollLeft, #scrollRight {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 10;
-        background: #f1f1f1;
-        border: none;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-        cursor: pointer;
-    }
-
-    #scrollLeft {
-        left: 10px;
-    }
-
-    #scrollRight {
-        right: 10px;
-    }
-
-    .section-box {
-        background: #ffffff; /* 배경색 (GPT 입력창처럼 흰색) */
-        border: 1px solid #ddd; /* 연한 테두리 */
-        border-radius: 10px; /* 둥근 모서리 */
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* 부드러운 그림자 */
-        padding: 20px; /* 안쪽 여백 */
-        margin-bottom: 0px; /* 아래쪽 간격 */
-    }
-
-</style>
+<head th:replace="~{fragments/header :: header('상품 상세')}"></head>
 
 <body>
-<div th:insert="~{fragments/bodyHeader :: bodyHeader}"/>
+<div class="page-wrapper">
 
-<div class="container" style="margin-top: 100px; margin-bottom: 100px;">
+  <!-- Navbar -->
+  <div th:insert="~{fragments/bodyHeader :: bodyHeader}"></div>
 
-    <section class="section-box">
-        <div class="row" style="display: flex; align-items: center;">
-            <!-- 왼쪽 화면 -->
-            <div class="col-md-6">
-                <div class="product-image" style="text-align: center;"> <!-- 이미지 오른쪽 정렬 -->
-                    <div th:if="${item.itemImageLink}">
-                        <img th:src="${item.itemImageLink}" th:alt="${item.itemTitle}" loading="lazy" class="img-fluid"
-                             style="max-width: 400px;">
-                    </div>
-                    <div th:if="${item.itemImageLink == null}">
-                        <p>이미지가 없습니다.</p>
-                    </div>
-                </div>
+  <!-- ===== 상품 상세 (알리 스타일) ===== -->
+  <div class="container pdp-container">
+
+    <!-- 브레드크럼 -->
+    <nav class="pdp-breadcrumb">
+      <a href="/shop/main">Home</a>
+      <i class="fa fa-chevron-right"></i>
+      <span th:text="${item.itemTitle}">상품명</span>
+    </nav>
+
+    <!-- 메인 카드: 이미지 + 정보 -->
+    <div class="pdp-main-card">
+      <div class="row g-0">
+
+        <!-- 왼쪽: 이미지 -->
+        <div class="col-md-5">
+          <div class="pdp-image-area">
+            <div class="detail-image-wrap" th:if="${item.itemImageLink}">
+              <img th:src="${item.itemImageLink}" th:alt="${item.itemTitle}" loading="lazy">
             </div>
-
-            <!-- 오른쪽 화면 -->
-            <div class="col-md-6">
-                <div class="product-info">
-                    <h3 th:text="${item.itemTitle}"></h3>
-
-                    <p><b>내용:</b> <span th:text="${item.itemContent}"></span></p>
-
-                    <p><b>상품 코드 :</b>
-                        <span class="badge bg-danger" th:text="${item.itemId}"></span>
-                    </p>
-
-                    <p><b>작성 날짜:</b>
-                        <span th:text="${#dates.format(item.itemDate, 'yyyy-MM-dd') != null ? #dates.format(item.itemDate, 'yyyy-MM-dd') : ''}"></span>
-                    </p>
-
-                    <p><b>해시 코드:</b>
-                        <span th:text="${item.hashCode != null ? item.hashCode : '없음'}"></span>
-                    </p>
-
-                    <p><b>제조사:</b> <span>전북 전주시 전북대학교</span></p>
-
-                    <h4>
-                        <span th:text="${item.itemPrice != null ? '₩' + item.itemPrice : '무료'}"></span>원
-                    </h4>
-                    <br>
-
-                    <p>
-                        <a href="#" class="btn btn-info">상품 주문 &raquo;</a>
-                        <a href="/" class="btn btn-secondary">주문취소 &raquo;</a>
-                    </p>
-                </div>
+            <div class="product-card__no-img" th:if="${item.itemImageLink == null}">
+              <i class="fa fa-image fa-3x"></i>
             </div>
+          </div>
         </div>
-    </section>
 
-    <section class="py-5" style="margin-top: 10px;">
-    <!--section class="py-5 section-box" style="margin-top: 10px;"-->
-        <div class="container px-4 px-lg-5 mt-5">
-            <div class="text-center">
-                <h4>📢 현재 보시는 상품과 시각적으로 유사한 상품들이에요 📢</h4>
+        <!-- 오른쪽: 상품 정보 -->
+        <div class="col-md-7">
+          <div class="pdp-info-panel">
+
+            <!-- 상품명 -->
+            <h1 class="pdp-title" th:text="${item.itemTitle}">상품명</h1>
+
+            <!-- 별점 + 리뷰 -->
+            <div class="pdp-rating-row">
+              <span class="pdp-stars">
+                <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+                <i class="fa fa-star"></i><i class="fa fa-star-half-alt"></i>
+              </span>
+              <span class="pdp-review-count"
+                    th:text="${#lists.size(replies)} + '개 리뷰'">0개 리뷰</span>
+              <span class="pdp-divider-dot">·</span>
+              <span class="pdp-sold-count">100+ 판매됨</span>
             </div>
 
-            <div th:if="${results == null or #lists.isEmpty(results)}" class="text-center">
-                <p>유사한 상품이 없습니다.</p>
+            <!-- 가격 박스 -->
+            <div class="pdp-price-box">
+              <span class="pdp-price"
+                    th:text="${item.itemPrice != null ? '₩' + #numbers.formatInteger(item.itemPrice, 0, 'COMMA') : '무료'}">
+              </span>
+              <span class="pdp-price-unit">원</span>
             </div>
 
-            <div th:if="${results != null and not #lists.isEmpty(results)}">
-                <!-- 가로 스크롤 상품 리스트 -->
-                <div style="position: relative; padding: 10px;">
-                    <button id="scrollLeft"> &#8249;</button>
+            <div class="pdp-section-divider"></div>
 
-                    <div id="scrollWrapper">
-                        <div style="display: inline-flex; gap: 1rem;">
-                            <div class="card h-100" th:each="result : ${results}" style="width: 250px; flex: 0 0 auto;">
-                                <a th:href="@{/shop/detail/{itemId}(itemId=${result.itemId})}">
-                                    <img class="card-img-top img-fluid"
-                                         th:src="${result.imageUrl != null ? result.imageUrl : '/images/default.jpg'}"
-                                         th:alt="${result.itemTitle != null ? result.itemTitle : '상품 이미지'}"
-                                         loading="lazy" style="max-width: 100%; height: auto;">
-                                </a>
-                                <div class="card-body p-4">
-                                    <div class="text-center">
-                                        <!--h5 class="fw-bolder item-title"
-                                            th:text="${result.itemTitle != null ? result.itemTitle : '상품 제목 없음'}">
-                                        </h5-->
-                                        <h5 class="fw-bolder item-title"
-                                            th:text="${#strings.length(result.itemTitle) > 19 ? #strings.substring(result.itemTitle, 0, 19) + '...' : result.itemTitle}">
-                                        </h5>
+            <!-- 수량 선택 -->
+            <div class="pdp-option-row">
+              <span class="pdp-option-label">수량</span>
+              <div class="pdp-qty-control">
+                <button type="button" class="pdp-qty-btn" id="qtyMinus">
+                  <i class="fa fa-minus"></i>
+                </button>
+                <input type="number" class="pdp-qty-input" id="qtyInput" value="1" min="1" max="99">
+                <button type="button" class="pdp-qty-btn" id="qtyPlus">
+                  <i class="fa fa-plus"></i>
+                </button>
+              </div>
+              <span class="pdp-stock-info">재고 있음</span>
+            </div>
 
-                                        <span th:text="${result.itemPrice != null ? result.itemPrice + ' 원' : '가격 없음'}"></span>
-                                        <br>
-                                        <span th:text="${result.hammingDistance != null ? '유사도: ' + result.hammingDistance : '유사도 정보 없음'}"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="pdp-section-divider"></div>
 
-                    <button id="scrollRight"> &#8250;</button>
+            <!-- 주문 버튼 -->
+            <div class="pdp-actions">
+              <button class="pdp-btn-order">
+                <i class="fa fa-shopping-bag me-2"></i>지금 주문하기
+              </button>
+              <button class="pdp-btn-cart">
+                <i class="fa fa-shopping-cart me-2"></i>장바구니 담기
+              </button>
+              <button class="pdp-btn-wish" title="찜하기">
+                <i class="fa fa-heart"></i>
+              </button>
+            </div>
+
+            <div class="pdp-section-divider"></div>
+
+            <!-- 배송/판매자 정보 -->
+            <ul class="pdp-meta-list">
+              <li>
+                <i class="fa fa-shipping-fast"></i>
+                <div>
+                  <strong>무료 배송</strong>
+                  <span>예상 도착: 3~5일 이내</span>
                 </div>
-            </div>
-        </div>
-    </section>
-
-
-    <section class="mb-5" style="width: 1200px; margin: 0 auto;">
-        <div class="card bg-light">
-            <div class="card-body">
-                <!-- Comment form -->
-
-                <form th:action="@{/shop/saveReply/{id}(id=${postId})}" th:object="${replyForm}" method="post"
-                      enctype="multipart/form-data">
-                    <div class="d-flex align-items-center gap-3">
-                        <!-- 작성자 & 비밀번호 -->
-                        <div class="d-flex flex-column">
-                            <div class="form-group mb-2">
-                                <input type="text" name="replyWriter" id="replyWriter" class="form-control"
-                                       placeholder="이름 입력" required>
-                            </div>
-                            <div class="form-group">
-                                <input type="password" name="replyPassword" id="replyPassword" class="form-control"
-                                       placeholder="비밀번호 입력" required>
-                            </div>
-                        </div>
-
-                        <!-- 댓글 입력 창 -->
-                        <div class="flex-grow-1">
-                            <textarea id="replyContent" name="replyContent" class="form-control" rows="3"
-                                      placeholder="댓글을 입력하세요"></textarea>
-                        </div>
-
-                        <!-- 등록 버튼 -->
-                        <button type="submit" class="btn btn-primary">등록</button>
-                    </div>
-                </form>
-
-                <br>
-
-                <!-- Comments List -->
-                <div id="commentList">
-                    <div class="d-flex mb-4" th:each="reply : ${replies}">
-                        <div class="flex-shrink-0">
-                            <img class="rounded-circle" src="https://dummyimage.com/50x50/ced4da/6c757d.jpg" alt="...">
-                        </div>
-                        <div class="ms-3">
-                            <div class="fw-bold" th:if="${reply != null}"
-                                 th:text="${reply.replyWriter != null ? reply.replyWriter : 'ㅇㅇ'}"></div>
-
-                            <span th:text="${reply.replyContent}"></span>
-                        </div>
-                    </div>
+              </li>
+              <li>
+                <i class="fa fa-undo-alt"></i>
+                <div>
+                  <strong>15일 무료 반품</strong>
+                  <span>구매일로부터 15일 이내</span>
                 </div>
-            </div>
-        </div>
-    </section>
+              </li>
+              <li>
+                <i class="fa fa-store"></i>
+                <div>
+                  <strong>판매자</strong>
+                  <span>So:0 Official Store</span>
+                </div>
+              </li>
+              <li>
+                <i class="fa fa-calendar-alt"></i>
+                <div>
+                  <strong>등록일</strong>
+                  <span th:text="${#dates.format(item.itemDate, 'yyyy-MM-dd')}"></span>
+                </div>
+              </li>
+            </ul>
 
-    <br>
-    <div th:insert="~{fragments/footer :: footer}"/>
-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 상품 설명 섹션 ===== -->
+    <div class="pdp-desc-card">
+      <div class="pdp-tab-header">
+        <span class="pdp-tab active">상품 설명</span>
+        <span class="pdp-tab">상세 스펙</span>
+      </div>
+      <div class="pdp-desc-body">
+        <p th:text="${item.itemContent}">상품 설명이 없습니다.</p>
+      </div>
+    </div>
+
+  </div><!-- /pdp-container -->
+
+  <!-- ===== 유사 상품 (Similar Items) ===== -->
+  <div class="similar-section" th:if="${results != null and not #lists.isEmpty(results)}">
+    <div class="container">
+      <div class="section-label">
+        <i class="fa fa-magic"></i> 이 상품과 유사한 상품
+      </div>
+      <div class="scroll-container-wrap">
+        <button class="scroll-btn scroll-btn-left" id="scrollLeft">
+          <i class="fa fa-chevron-left"></i>
+        </button>
+        <div class="scroll-container" id="scrollWrapper">
+          <div class="scroll-card" th:each="result : ${results}">
+            <a th:href="@{/shop/detail/{itemId}(itemId=${result.itemId})}">
+              <div class="product-card">
+                <div class="product-card__img-wrap">
+                  <img th:src="${result.imageUrl != null ? result.imageUrl : '/images/default.jpg'}"
+                       th:alt="${result.itemTitle != null ? result.itemTitle : '상품 이미지'}"
+                       loading="lazy">
+                </div>
+                <div class="product-card__body">
+                  <p class="product-card__title"
+                     th:text="${#strings.length(result.itemTitle) > 19 ? #strings.substring(result.itemTitle, 0, 19) + '...' : result.itemTitle}"></p>
+                  <p class="product-card__price"
+                     th:text="${result.itemPrice != null ? '₩' + #numbers.formatInteger(result.itemPrice, 0, 'COMMA') : '가격 없음'}"></p>
+                  <p class="product-card__similarity"
+                     th:text="${result.hammingDistance != null ? '유사도: ' + result.hammingDistance : ''}"></p>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+        <button class="scroll-btn scroll-btn-right" id="scrollRight">
+          <i class="fa fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 댓글/리뷰 섹션 ===== -->
+  <div class="container">
+    <div class="comment-section">
+      <h5 class="comment-section__title">
+        <i class="fa fa-comment-dots me-2"></i>구매 리뷰
+        <span class="pdp-review-badge"
+              th:text="${#lists.size(replies)} + '개'">0개</span>
+      </h5>
+
+      <!-- 댓글 작성 폼 -->
+      <form class="comment-form"
+            th:action="@{/shop/saveReply/{id}(id=${postId})}"
+            th:object="${replyForm}"
+            method="post"
+            enctype="multipart/form-data">
+        <div class="form-row">
+          <input type="text" name="replyWriter" placeholder="이름" required>
+          <input type="password" name="replyPassword" placeholder="비밀번호" required>
+        </div>
+        <textarea name="replyContent" rows="3" placeholder="구매 후기를 남겨주세요"></textarea>
+        <div>
+          <button type="submit" class="btn-primary-custom">리뷰 등록</button>
+        </div>
+      </form>
+
+      <!-- 댓글 목록 -->
+      <div th:if="${#lists.isEmpty(replies)}" class="pdp-no-review">
+        <i class="fa fa-comment-slash fa-2x"></i>
+        <p>아직 리뷰가 없습니다. 첫 번째 리뷰를 남겨보세요!</p>
+      </div>
+
+      <div th:each="reply : ${replies}" class="comment-item">
+        <div class="comment-avatar"
+             th:text="${reply.replyWriter != null ? #strings.substring(reply.replyWriter, 0, 1).toUpperCase() : 'U'}">
+        </div>
+        <div>
+          <p class="comment-author"
+             th:text="${reply.replyWriter != null ? reply.replyWriter : '익명'}"></p>
+          <div class="pdp-review-stars">
+            <i class="fa fa-star"></i><i class="fa fa-star"></i>
+            <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i>
+          </div>
+          <p class="comment-content" th:text="${reply.replyContent}"></p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div th:insert="~{fragments/footer :: footer}"></div>
+
+</div><!-- /page-wrapper -->
 
 <script>
+  /* 수량 컨트롤 */
+  const qtyInput = document.getElementById('qtyInput');
+  document.getElementById('qtyMinus').addEventListener('click', () => {
+    if (qtyInput.value > 1) qtyInput.value--;
+  });
+  document.getElementById('qtyPlus').addEventListener('click', () => {
+    if (qtyInput.value < 99) qtyInput.value++;
+  });
 
+  /* 유사 상품 스크롤 버튼 */
+  const scrollWrapper = document.getElementById('scrollWrapper');
+  const scrollLeftBtn  = document.getElementById('scrollLeft');
+  const scrollRightBtn = document.getElementById('scrollRight');
+  const scrollDist = 680;
 
-    const scrollWrapper = document.getElementById('scrollWrapper');
-    const scrollLeft = document.getElementById('scrollLeft');
-    const scrollRight = document.getElementById('scrollRight');
+  scrollLeftBtn  && scrollLeftBtn.addEventListener('click',  () => scrollWrapper.scrollLeft -= scrollDist);
+  scrollRightBtn && scrollRightBtn.addEventListener('click', () => scrollWrapper.scrollLeft += scrollDist);
 
-    // 스크롤 이동 거리
-    const scrollDistance = 1060;
-
-    // 왼쪽 버튼 클릭 시 (기존 scrollBy → scrollLeft 직접 조작)
-    scrollLeft.addEventListener('click', () => {
-        scrollWrapper.scrollLeft -= scrollDistance;
-        console.log("left")
-    });
-
-    // 오른쪽 버튼 클릭 시
-    scrollRight.addEventListener('click', () => {
-        scrollWrapper.scrollLeft += scrollDistance;
-        console.log("right")
-    });
-
-
-/*
-    window.onload = function () {
-        document.querySelectorAll(".item-title").forEach(el => {
-            let text = el.innerText.trim();
-            if (text.length > 19) {
-                el.innerText = text.substring(0, 19) + "...";
-            }
-        });
-    };
-
- */
-
+  /* 찜하기 토글 */
+  const wishBtn = document.querySelector('.pdp-btn-wish');
+  wishBtn && wishBtn.addEventListener('click', () => {
+    wishBtn.classList.toggle('wished');
+  });
 </script>
 
 </body>

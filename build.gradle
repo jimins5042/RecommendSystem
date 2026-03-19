@@ -75,3 +75,8 @@ dependencyManagement {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+bootJar {
+    exclude 'upload/**'
+    exclude 'wallet/**'
+}
