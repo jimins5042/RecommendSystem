@@ -19,22 +19,21 @@ public class ShopService {
     private final ShopRepository shopRepository;
     private final UploadService uploadService;
 
-    public Long insertItem(Item itemForm, MultipartFile file) throws IOException {
-        //이미지 특징 추출 후 저장
-        String imgUuid = "";
-        if (!file.isEmpty()) {
-            imgUuid = uploadService.uploadFile(file);
-        }
+    public Long insertItem(Item itemForm, MultipartFile[] files) throws IOException {
 
         Item item = Item.builder()
                 .itemTitle(itemForm.getItemTitle())
                 .itemContent(itemForm.getItemContent())
                 .itemPrice(itemForm.getItemPrice())
-                .itemImageLink(imgUuid)
                 .build();
 
         //게시물 정보 저장
         Long itemId = shopRepository.save(item);
+
+        //이미지 특징 추출 후 저장
+        if (files != null && files.length > 0) {
+            boolean isUpload = uploadService.uploadFile(files, itemId);
+        }
 
         log.info("= 상품추가 성공 =");
         return itemId;

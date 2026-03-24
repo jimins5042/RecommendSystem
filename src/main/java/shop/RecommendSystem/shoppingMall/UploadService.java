@@ -32,47 +32,53 @@ public class UploadService {
 
 
     //로컬에 이미지 업로드
-    public String uploadFile(MultipartFile file) throws IOException {
+    public boolean uploadFile(MultipartFile[] files, Long itemId) throws IOException {
 
-        long uniqueKey = System.currentTimeMillis() * 1000 + ThreadLocalRandom.current().nextInt(1000);
-        String uuid = String.valueOf(uniqueKey);
 
         try {
+            for (MultipartFile file : files) {
 
-            String originalFilename = file.getOriginalFilename();
+                long uniqueKey = System.currentTimeMillis() * 1000 + ThreadLocalRandom.current().nextInt(1000);
+                String uuid = String.valueOf(uniqueKey);
 
-            String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+                String originalFilename = file.getOriginalFilename();
 
-            String fileName = uuid + "." + extension;
+                String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
 
-            File dir = new File(resourcePath);
-            if (!dir.exists()) {
-                dir.mkdirs();
+                String fileName = uuid + "." + extension;
+
+                File dir = new File(resourcePath);
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+
+                String imgUrl = connectPath + "/" + fileName;
+                String pHash = new PHash().getPHash(file);
+
+                File saveFile = new File(dir, fileName);
+                file.transferTo(saveFile);
+
+                ImageInfo image = ImageInfo.builder()
+                        .imageUuid(uuid)                                //이미지 식별번호
+                        .imageOriginalName(file.getOriginalFilename())  //이미지 명
+                        .imageUrl(imgUrl)                               //이미지 저장경로
+                        .imageHashCode(pHash)                           //이미지 pHash
+                        .itemId(itemId)                                 //상품 번호
+                        .build();
+
+                log.info("fullPath={} \nuuid={} \nfileName = {} \npHash = {}", imgUrl, uuid, file.getOriginalFilename(), pHash);
+                itemMapper.insertImageInfo(image); //이미지 주소, 이름 저장
+
+                // redis stream(메시지큐)에 이미지 특징점 추출 요청 적재
+                //redisService.sendToStream("imgSearch:preprocess_wait", Map.of("imageUuid", uuid, "imageUrl", imgUrl));
             }
-
-            String imgUrl = connectPath + "/" + fileName;
-            String pHash = new PHash().getPHash(file);
-
-            File saveFile = new File(dir, fileName);
-            file.transferTo(saveFile);
-
-            ImageInfo image = ImageInfo.builder()
-                    .imageUuid(uuid)                                //이미지 식별번호
-                    .imageOriginalName(file.getOriginalFilename())  //이미지 명
-                    .imageUrl(imgUrl)                               //이미지 저장경로
-                    .imageHashCode(pHash)                           //이미지 pHash
-                    .build();
-
-            log.info("fullPath={} \nuuid={} \nfileName = {} \npHash = {}", imgUrl, uuid, file.getOriginalFilename(), pHash);
-            itemMapper.insertImageInfo(image); //이미지 주소, 이름 저장
-
-            // redis stream(메시지큐)에 이미지 특징점 추출 요청 적재
-            redisService.sendToStream("imgSearch:preprocess_wait", Map.of("imageUuid", uuid, "imageUrl", imgUrl));
 
         } catch (Exception e) {
             log.info("=== 이미지 저장 중 에러 발생)");
             e.printStackTrace();
+            return false;
         }
-        return uuid;
+
+        return true;
     }
 }

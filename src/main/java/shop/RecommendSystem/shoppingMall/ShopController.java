@@ -116,9 +116,9 @@ public class ShopController {
     }
 
     @PostMapping("/shop/addItemAction")
-    public String addItemAction(@ModelAttribute Item itemForm, @RequestParam("imgFile") MultipartFile file) throws IOException {
+    public String addItemAction(@ModelAttribute Item itemForm, @RequestParam("imgFile") MultipartFile[] files) throws IOException {
 
-        Long productId = shopService.insertItem(itemForm, file);
+        Long productId = shopService.insertItem(itemForm, files);
 
         return "redirect:shop/detail/" + productId;
 

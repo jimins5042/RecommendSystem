@@ -14,6 +14,7 @@ import java.util.Date;
 public class ImageInfo {
 
     private Long imageId;
+    private Long itemId;
     private String imageUuid;
     private String imageOriginalName;
     private String imageUrl;
@@ -24,28 +25,6 @@ public class ImageInfo {
     private Date updatedAt;
 
     public ImageInfo() {
-    }
-
-    public ImageInfo(String imageUuid, String imageHashCode) {
-        this.imageUuid = imageUuid;
-        this.imageHashCode = imageHashCode;
-    }
-
-    public ImageInfo(String imageUuid, String imageOriginalName, String imageUrl, String imageHashCode) {
-        this.imageUuid = imageUuid;
-        this.imageOriginalName = imageOriginalName;
-        this.imageUrl = imageUrl;
-        this.imageHashCode = imageHashCode;
-    }
-
-    public ImageInfo(Long imageId, String imageUuid, String imageOriginalName, String imageUrl, String imageHashCode, Date createdAt, Date updatedAt) {
-        this.imageId = imageId;
-        this.imageUuid = imageUuid;
-        this.imageOriginalName = imageOriginalName;
-        this.imageUrl = imageUrl;
-        this.imageHashCode = imageHashCode;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
     }
 }
 

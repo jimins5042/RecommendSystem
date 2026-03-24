@@ -27,7 +27,7 @@
         s.item_id, s.item_title, s.item_price, i.image_url, i.image_uuid, i.img_feature_value as imgFeatureValue
         FROM shop_board s
         INNER JOIN image_info i
-        ON s.item_image_link = i.image_uuid
+        ON s.item_id = i.item_id
 
         WHERE 1=1
         and i.image_uuid in (
@@ -64,7 +64,7 @@
         INNER JOIN
         image_info i
         ON
-        s.item_image_link = i.image_uuid
+        s.item_id = i.item_id
         WHERE i.image_uuid IN (
         <foreach collection="list" item="item" separator=", ">
             #{item}
@@ -81,7 +81,7 @@
         LEFT JOIN
         image_info i
         ON
-        s.item_image_link = i.image_uuid
+        s.item_id = i.item_id
         WHERE
         i.image_uuid IN(
         SELECT image_uuid FROM (
