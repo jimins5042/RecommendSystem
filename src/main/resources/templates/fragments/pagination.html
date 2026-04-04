@@ -1,0 +1,47 @@
+<!-- 페이지네이션 -->
+<div th:fragment="pagination(pageDto)">
+
+    <nav class="shop-pagination">
+        <ul class="pagination">
+
+            <!-- 이전 블록 -->
+            <li class="page-item" th:if="${pageDto.pageNo > 9}">
+                <a class="page-link" href="#"
+                   th:data-page="${((pageDto.pageNo - 1) / 10) * 10 - 9}"
+                   onclick="goPage(this)" aria-label="Previous">
+                    <i class="fa fa-chevron-left"></i>
+                </a>
+            </li>
+
+            <!-- 페이지 번호 -->
+            <li class="page-item"
+                th:each="i : ${#numbers.sequence(pageDto.startPage, pageDto.endPage)}"
+                th:classappend="${i == pageDto.pageNo} ? 'active' : ''">
+                <a class="page-link" href="#"
+                   th:data-page="${i}"
+                   th:text="${i}"
+                   onclick="goPage(this)"></a>
+            </li>
+
+            <!-- 다음 블록 -->
+            <li class="page-item" th:if="${pageDto.endPage < pageDto.totalPages}">
+                <a class="page-link" href="#"
+                   th:data-page="${pageDto.endPage + 1}"
+                   onclick="goPage(this)" aria-label="Next">
+                    <i class="fa fa-chevron-right"></i>
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+
+    <script>
+        function goPage(el) {
+            event.preventDefault();
+            var page = el.getAttribute('data-page');
+            var url = new URL(window.location.href);
+            url.searchParams.set('page', page);
+            window.location.href = url.toString();
+        }
+    </script>
+</div>

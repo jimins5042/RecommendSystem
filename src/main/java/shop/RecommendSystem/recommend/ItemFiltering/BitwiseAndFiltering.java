@@ -2,9 +2,10 @@ package shop.RecommendSystem.recommend.ItemFiltering;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.HashOperations;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import shop.RecommendSystem.dto.PreFilterDto;
 import shop.RecommendSystem.dto.SearchResult;
@@ -15,31 +16,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.fasterxml.jackson.databind.type.LogicalType.Map;
-
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class BitwiseANDFiltering {
+public class BitwiseAndFiltering {
 
     private final SearchMapper searchMapper;
+    private final RedisTemplate redisTemplate;
 
-    private ArrayList<PreFilterDto> list = new ArrayList<>();
 
-    // 프로젝트 시작시 실행
-    @PostConstruct
-    public void initializeSearchData() throws JsonProcessingException {
+    // 검색 데이터 전처리
+    public ArrayList<PreFilterDto> initializeSearchData() throws JsonProcessingException {
         ArrayList<PreFilterDto> images = searchMapper.findReduceTarget();
 
         for (PreFilterDto image : images) {
-            PreFilterDto preFilter = PreFilterDto.builder()
-                    .imageUuid(image.getImageUuid())
-                    .layerOrderList(addSearchData(image.getFeatureOrder()))
-                    .build();
-
-            list.add(preFilter);
+            image.setLayerOrderList(addSearchData(image.getFeatureOrder()));
         }
         log.info("=== PreFilter list initialized ===");
+
+        return images;
     }
 
 
@@ -105,7 +100,15 @@ public class BitwiseANDFiltering {
     public ArrayList<PreFilterDto> preprocessList(String layerList) throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         int[] layer = objectMapper.readValue(layerList, int[].class);
-        return reduceScope(list, layer, 0);
+
+        HashOperations<String, String, Object> hashOps = redisTemplate.opsForHash();
+        ArrayList<PreFilterDto> bitwiseANDFilteringList = (ArrayList<PreFilterDto>) redisTemplate.opsForHash().get("bitwiseANDFiltering", "searchData");
+
+        if(bitwiseANDFilteringList == null || bitwiseANDFilteringList.isEmpty()) {
+            bitwiseANDFilteringList= initializeSearchData();
+            hashOps.put("bitwiseANDFiltering", "searchData", bitwiseANDFilteringList);
+        }
+        return reduceScope(bitwiseANDFilteringList, layer, 0);
     }
 
     /**

@@ -3,13 +3,16 @@ package shop.RecommendSystem.shoppingMall;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.dto.Page;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
-import shop.RecommendSystem.repository.ShopRepository;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +21,38 @@ public class ShopService {
     private final ItemMapper itemMapper;
     private final ShopRepository shopRepository;
     private final UploadService uploadService;
+
+    public Map findThumbnailAll(String category, Long page){
+
+        return findThumbnailAll(category, page, 8L);
+
+    }
+
+    public Map findThumbnailAll(String category, Long page, Long size) {
+        log.info("category : " + category);
+
+        // 페이지 번호와 크기 검증
+        page = (page < 1) ? 1 : page;
+
+        if(size == null || size <= 0){
+            size = 8L;  // 페이지당 아이템 수
+        }
+
+        Long offset = (page - 1) * size; // 페이지 번호를 0부터 시작하도록 조정
+        try {
+
+            List<Item> items = shopRepository.findThumbnailAll(offset, size, category); // 데이터 조회
+            Page pageDto = calPage(page);
+
+            return Map.of(
+                    "items", items,
+                    "pageDto", pageDto);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     public Long insertItem(Item itemForm, MultipartFile[] files) throws IOException {
 

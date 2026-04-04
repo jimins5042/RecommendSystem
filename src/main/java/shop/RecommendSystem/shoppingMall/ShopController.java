@@ -11,12 +11,12 @@ import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.dto.Page;
 import shop.RecommendSystem.dto.Reply;
 import shop.RecommendSystem.dto.SearchResult;
-import shop.RecommendSystem.repository.ShopRepository;
 import shop.RecommendSystem.search.SearchService;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @Slf4j
@@ -55,14 +55,12 @@ public class ShopController {
     public String shopMain(
             @RequestParam(value = "page", defaultValue = "1") Long page,
             Model model) {
-
-        // 페이지 번호와 크기 검증
-        page = (page < 1) ? 1 : page;
-        Long size = 8L;  // 페이지당 아이템 수
-        Long offset = (page - 1) * size; // 페이지 번호를 0부터 시작하도록 조정
         try {
-            List<Item> items = shopRepository.findThumbnailAll(offset, size); // 데이터 조회
-            Page pageDto = shopService.calPage(page);
+
+            Map result = shopService.findThumbnailAll(null, page);
+
+            List<Item> items = (List<Item>) result.get("items"); // 데이터 조회
+            Page pageDto = (Page) result.get("pageDto"); // 데이터 조회
 
             // 모델에 데이터 추가
             model.addAttribute("items", items);
@@ -71,7 +69,36 @@ public class ShopController {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return "shop/itemMain";  // 템플릿 파일 경로
+        return "shop/showMain";  // 템플릿 파일 경로
+    }
+
+    @GetMapping("/shop/list")
+    public String shopCategory(@RequestParam(value = "type", defaultValue = "all") String category,
+                               @RequestParam(value = "page", defaultValue = "1") Long page,
+                               Model model) {
+
+        Map result = shopService.findThumbnailAll(category, page, 20L);
+
+        List<Item> items = (List<Item>) result.get("items"); // 데이터 조회
+        Page pageDto = (Page) result.get("pageDto"); // 데이터 조회
+
+        // 모델에 데이터 추가
+        model.addAttribute("items", items);
+        model.addAttribute("pageDto", pageDto);
+
+
+        return "shop/itemMain";
+    }
+
+    @PostMapping("/shop/category")
+    @ResponseBody
+    public Map shopCategoryFetch(@RequestBody Map map) {
+
+        String category = (String) map.get("category");
+        Number pageNum = (Number) map.get("page");
+        Long page = pageNum.longValue();
+
+        return shopService.findThumbnailAll(category, page);
     }
 
     @GetMapping("/shop/detail/{id}")
@@ -86,8 +113,6 @@ public class ShopController {
 
             //추천 상품 조회
             if (item.getHashCode() != null) {
-                //List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), 8);
-                //List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), item.getBitArray().getBytes(), 8);
                 List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), item.getBitArray(), 8, id);
                 model.addAttribute("results", results);
             }

@@ -21,8 +21,6 @@ public class Item {
     private String category;
     private List<String> imageUrlList;
     private String imageUrl;
-    private String imageLink;
-    private String itemImageLink;
     private String hashCode;
     private byte[] bitArray;
     public Item() {

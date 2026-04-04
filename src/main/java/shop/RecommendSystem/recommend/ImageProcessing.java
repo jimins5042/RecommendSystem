@@ -25,6 +25,7 @@ public class ImageProcessing {
 
         URL url = new URL(hostInfo + imageUrl);
 
+
         BufferedImage originalImage = ImageIO.read(url);
 
         Scalr.Method m;

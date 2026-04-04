@@ -24,16 +24,17 @@ public class PrefixFiltering {
     private int windowSize = 4;
 
     //프로젝트 시작시 실행
-//    @PostConstruct
-//    public void initializeSearchData() {
-//        ArrayList<ImageInfo> images = searchMapper.findSearchPHashTarget();
-//
-//        //객체 안에는 imageUuid, imageHashCode가 존재
-//        for (ImageInfo image : images) {
-//            addSearchData(image);
-//        }
-//        log.info("=== pHash buckets initialized ===");
-//    }
+    public HashMap<String, HashSet<ImageInfo>> initializeSearchData() {
+        ArrayList<ImageInfo> images = searchMapper.findSearchPHashTarget();
+
+        //객체 안에는 imageUuid, imageHashCode가 존재
+        for (ImageInfo image : images) {
+            addSearchData(image);
+        }
+
+        log.info("=== pHash buckets initialized ===");
+        return buckets;
+    }
 
 
     public HashMap<String, Double> searchSimilarItem(String hashValue) {

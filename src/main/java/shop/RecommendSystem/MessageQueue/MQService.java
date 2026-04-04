@@ -6,13 +6,12 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StreamOperations;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RequiredArgsConstructor
 @Service
 @Slf4j
-public class RedisService {
+public class MQService {
 
     private final RedisTemplate<String, Object> redisTemplate;
 

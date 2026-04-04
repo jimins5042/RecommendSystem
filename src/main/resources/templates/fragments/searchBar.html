@@ -1,0 +1,49 @@
+<div th:fragment="searchBar">
+    <div class="search-area">
+        <div class="container">
+            <form class="search-form" th:action="@{/search/img}" method="post" enctype="multipart/form-data">
+
+                <!-- 숨겨진 파일 입력 -->
+                <input type="file" name="imgFile" id="imgFile" class="d-none" accept="image/*">
+
+                <!-- 텍스트 검색 입력 -->
+                <input id="searchInput" type="text" name="query" placeholder="검색어 또는 이미지로 검색하세요">
+
+                <!-- 이미지 검색 버튼 -->
+                <button type="button" class="btn-img-search" id="fileSelectButton" title="이미지로 검색">
+                    <i class="fa fa-image"></i>
+                    <div class="img-search-tooltip">
+                        <strong>이미지로 검색하기</strong><br>
+                        이미지 검색으로 원했던 상품을 더 나은 가격으로 만나보세요.
+                    </div>
+                </button>
+
+                <!-- 검색 버튼 -->
+                <button type="submit" class="btn-search" title="검색">
+                    <i class="fa fa-search"></i>
+                </button>
+
+            </form>
+        </div>
+    </div>
+
+    <script>
+        /* 파일 검색 */
+        const fileSelectButton = document.getElementById('fileSelectButton');
+        const fileInput = document.getElementById('imgFile');
+        const searchInput = document.getElementById('searchInput');
+
+        fileSelectButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                searchInput.value = fileInput.files[0].name;
+            } else {
+                searchInput.value = '';
+            }
+        });
+
+    </script>
+</div>

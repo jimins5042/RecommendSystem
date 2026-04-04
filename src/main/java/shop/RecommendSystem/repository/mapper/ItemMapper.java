@@ -28,7 +28,7 @@ public interface ItemMapper {
     List<Item> findAll(Map<String, Long> map);
 
     //이미지가 있는 게시글 리스트 탐색
-    List<Item> findThumbnailAll(Map<String, Long> map);
+    List<Item> findThumbnailAll(Map<String, Object> map);
 
     //글 목록수 반환
     Long countItems();

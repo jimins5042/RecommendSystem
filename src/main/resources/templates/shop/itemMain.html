@@ -6,144 +6,80 @@
 <body>
 <div class="page-wrapper">
 
-  <!-- Navbar -->
-  <div th:insert="~{fragments/bodyHeader :: bodyHeader}"></div>
+    <!-- Navbar -->
+    <div th:insert="~{fragments/bodyHeader :: bodyHeader}"></div>
 
-  <!-- Search Area -->
-  <div class="search-area">
-    <div class="container">
-      <form class="search-form" th:action="@{/search/img}" method="post" enctype="multipart/form-data">
+    <!-- Search Area -->
+    <div th:insert="~{fragments/searchBar :: searchBar}"></div>
 
-        <!-- 숨겨진 파일 입력 -->
-        <input type="file" name="imgFile" id="imgFile" class="d-none" accept="image/*">
+    <!-- ===== 추천 상품 섹션 ===== -->
+    <section class="section-wrap" th:if="${items != null}">
+        <div class="container">
 
-        <!-- 텍스트 검색 입력 -->
-        <input id="searchInput" type="text" name="query" placeholder="검색어 또는 이미지로 검색하세요">
+            <h2 class="section-title">카테고리별 쇼핑</h2>
+            <p class="section-subtitle">상품을 클릭하면 해당 상품과 유사한 상품을 추천합니다.</p>
 
-        <!-- 이미지 검색 버튼 -->
-        <button type="button" class="btn-img-search" id="fileSelectButton" title="이미지로 검색">
-          <i class="fa fa-image"></i>
-          <div class="img-search-tooltip">
-            <strong>이미지로 검색하기</strong><br>
-            이미지 검색으로 원했던 상품을 더 나은 가격으로 만나보세요.
-          </div>
-        </button>
-
-        <!-- 검색 버튼 -->
-        <button type="submit" class="btn-search" title="검색">
-          <i class="fa fa-search"></i>
-        </button>
-
-      </form>
-    </div>
-  </div>
-
-  <!-- ===== 추천 상품 섹션 ===== -->
-  <section class="section-wrap" th:if="${items != null}">
-    <div class="container">
-
-      <h2 class="section-title">오늘의 추천 상품</h2>
-      <p class="section-subtitle">이미지 검색으로 원하는 상품을 추천 받으세요</p>
-
-      <div class="row g-3 g-lg-4">
-        <div class="col-6 col-md-4 col-lg-3" th:each="item : ${items}">
-          <a th:href="@{/shop/detail/{id}(id=${item.itemId})}">
-            <div class="product-card">
-              <!-- 이미지 -->
-              <div class="product-card__img-wrap" th:if="${item.itemImageLink != null}">
-                <img th:src="${item.itemImageLink}" th:alt="${item.itemTitle}" loading="lazy">
-              </div>
-              <div class="product-card__no-img" th:if="${item.itemImageLink == null}">
-                <i class="fa fa-image fa-2x"></i>
-              </div>
-              <!-- 정보 -->
-              <div class="product-card__body">
-                <p class="product-card__title" th:text="${item.itemTitle}"></p>
-                <p class="product-card__price" th:text="'₩' + ${#numbers.formatInteger(item.itemPrice, 0, 'COMMA')}"></p>
-              </div>
+            <div class="category-tab-header">
+                <button class="category-tab active" data-category="all">전체</button>
+                <button class="category-tab" data-category="신발">신발</button>
+                <button class="category-tab" data-category="선글라스">선글라스</button>
+                <button class="category-tab" data-category="의류">의류</button>
+                <button class="category-tab" data-category="가방">가방</button>
+                <button class="category-tab" data-category="식음료">식음료</button>
             </div>
-          </a>
-        </div>
-      </div>
 
-      <!-- 페이지네이션 -->
-      <nav class="shop-pagination">
-        <ul class="pagination">
-          <li class="page-item" th:if="${pageDto.pageNo > 9}">
-            <a class="page-link" th:href="@{/shop/main(page=${(pageDto.pageNo/10 - 1) * 10 + 1})}" aria-label="Previous">
-              <i class="fa fa-chevron-left"></i>
-            </a>
-          </li>
-          <li class="page-item"
-              th:each="i : ${#numbers.sequence(pageDto.startPage, pageDto.endPage)}"
-              th:classappend="${i == pageDto.pageNo} ? 'active' : ''">
-            <a class="page-link" th:href="@{/shop/main(page=${i})}" th:text="${i}"></a>
-          </li>
-          <li class="page-item" th:if="${pageDto.pageNo < pageDto.totalPages}">
-            <a class="page-link" th:href="@{/shop/main(page=${(pageDto.pageNo/10 + 1) * 10 + 1})}" aria-label="Next">
-              <i class="fa fa-chevron-right"></i>
-            </a>
-          </li>
-        </ul>
-      </nav>
-
-    </div>
-  </section>
-
-  <!-- ===== 유사 상품 섹션 (이미지 검색 결과) ===== -->
-  <section class="section-wrap" th:if="${results != null}">
-    <div class="container">
-
-      <div class="section-label">
-        <i class="fa fa-magic"></i> 시각적으로 유사한 상품
-      </div>
-
-      <div class="row g-3 g-lg-4">
-        <div class="col-6 col-md-4 col-lg-3" th:each="result : ${results}">
-          <a th:href="@{/shop/detail/{itemId}(itemId=${result.itemId})}">
-            <div class="product-card">
-              <div class="product-card__img-wrap">
-                <img th:src="${result.imageUrl != null ? result.imageUrl : '/images/default.jpg'}"
-                     th:alt="${result.itemTitle != null ? result.itemTitle : '상품 이미지'}"
-                     loading="lazy">
-              </div>
-              <div class="product-card__body">
-                <p class="product-card__title"
-                   th:text="${result.itemTitle != null ? result.itemTitle : '상품 제목 없음'}"></p>
-                <p class="product-card__price"
-                   th:text="${result.itemPrice != null ? '₩' + result.itemPrice : '가격 없음'}"></p>
-                <p class="product-card__similarity"
-                   th:text="${result.hammingDistance != null ? '유사도: ' + result.hammingDistance : ''}"></p>
-              </div>
+            <div class="row g-3 g-lg-4">
+                <div class="col-6 col-md-4 col-lg-3" th:each="item : ${items}">
+                    <a th:href="@{/shop/detail/{id}(id=${item.itemId})}">
+                        <div class="product-card">
+                            <!-- 이미지 -->
+                            <div class="product-card__img-wrap" th:if="${item.imageUrl != null}">
+                                <img th:src="${item.imageUrl}" th:alt="${item.itemTitle}" loading="lazy">
+                            </div>
+                            <div class="product-card__no-img" th:if="${item.imageUrl == null}">
+                                <i class="fa fa-image fa-2x"></i>
+                            </div>
+                            <!-- 정보 -->
+                            <div class="product-card__body">
+                                <p class="product-card__title" th:text="${item.itemTitle}"></p>
+                                <p class="product-card__price"
+                                   th:text="'₩' + ${#numbers.formatInteger(item.itemPrice, 0, 'COMMA')}"></p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
             </div>
-          </a>
+
+            <!-- 페이지네이션 -->
+            <div th:insert="~{fragments/pagination :: pagination(pageDto=${pageDto})}"></div>
         </div>
-      </div>
+    </section>
 
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <div th:insert="~{fragments/footer :: footer}"></div>
+    <!-- Footer -->
+    <div th:insert="~{fragments/footer :: footer}"></div>
 
 </div><!-- /page-wrapper -->
 
 <script>
-  const fileSelectButton = document.getElementById('fileSelectButton');
-  const fileInput = document.getElementById('imgFile');
-  const searchInput = document.getElementById('searchInput');
+    /* 카테고리 탭 */
+    const categoryTabs = document.querySelectorAll('.category-tab');
+    const urlType = new URLSearchParams(window.location.search).get('type') || 'all';
 
-  fileSelectButton.addEventListener('click', () => {
-    fileInput.click();
-  });
+    /* 현재 URL의 type에 맞춰 active 표시 */
+    categoryTabs.forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.category === urlType);
+    });
 
-  fileInput.addEventListener('change', () => {
-    if (fileInput.files.length > 0) {
-      searchInput.value = fileInput.files[0].name;
-    } else {
-      searchInput.value = '';
+    function loadCategory(category) {
+        location.href = "/shop/list?type=" + encodeURIComponent(category) + "&page=1";
     }
-  });
+
+    categoryTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            loadCategory(tab.dataset.category);
+        });
+    });
+
 </script>
 
 </body>

@@ -18,8 +18,7 @@ public class MinHashFiltering {
     private final SearchMapper searchMapper;
     private HashMap<String, int[]> minHashMap = new HashMap<>();
 
-    //@PostConstruct
-    public void initializeSearchData() {
+    public HashMap<String, int[]> initializeSearchData() {
         try {
             ArrayList<PreFilterDto> images = searchMapper.findLshTarget();
 
@@ -34,6 +33,8 @@ public class MinHashFiltering {
             }
 
             log.info("=== MinHash list initialized ===");
+
+            return minHashMap;
         } catch (Exception e) {
             log.error("MinHash 초기화 중 오류 발생", e);
             throw new RuntimeException("MinHash 초기화 중 오류 발생", e);

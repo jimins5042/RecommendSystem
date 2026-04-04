@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/header :: header('이미지 검색 결과')}"></head>
+<style>
+    /* 검색 이미지 캔버스 영역 고정 및 스크롤 */
+    .searched-image-canvas-wrap {
+        max-height: 500px; /* 원하는 세로 길이로 고정 */
+        overflow-y: auto;
+        overflow-x: hidden;
+        border-radius: 12px;
+        background: #f8f9fa; /* 배경색 살짝 추가 */
+        border: 1px solid #e9ecef;
+        box-shadow: inset 0 2px 8px rgba(0,0,0,0.05);
+        position: relative;
+    }
+
+    /* 세련된 커스텀 스크롤바 */
+    .searched-image-canvas-wrap::-webkit-scrollbar {
+        width: 6px;
+    }
+    .searched-image-canvas-wrap::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .searched-image-canvas-wrap::-webkit-scrollbar-thumb {
+        background: #ced4da;
+        border-radius: 10px;
+    }
+    .searched-image-canvas-wrap::-webkit-scrollbar-thumb:hover {
+        background: #adb5bd;
+    }
+
+    /* 캔버스 자체 스타일 */
+    #searchCanvas {
+        display: block;
+        width: 100%;
+        height: auto; /* 비율 유지 */
+        cursor: crosshair;
+    }
+</style>
+
+<body>
+<!-- Navbar -->
+<div th:insert="~{fragments/bodyHeader :: bodyHeader}"></div>
+<div th:insert="~{fragments/searchBar :: searchBar}"></div>
+<div class="container">
+
+    <!-- 감지 데이터 (JS에서 사용) -->
+    <script type="application/json" id="detection-data"
+            th:if="${detectionsJson != null}" th:utext="${detectionsJson}">[]</script>
+
+    <div class="search-result-layout">
+
+        <!-- 왼쪽: 감지 객체 + 검색 이미지 -->
+        <aside th:if="${searchedImage != null}" class="searched-image-panel">
+
+            <!-- 크롭 슬라이더 (이미지 위) -->
+            <div class="crop-slider" id="cropSlider" style="display:none;">
+                <button type="button" class="crop-scroll-btn crop-scroll-left" id="cropScrollLeft">
+                    <i class="fa fa-chevron-left"></i>
+                </button>
+                <div class="crop-track" id="croppedObjects"></div>
+                <button type="button" class="crop-scroll-btn crop-scroll-right" id="cropScrollRight">
+                    <i class="fa fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- 캔버스 -->
+            <div class="searched-image-canvas-wrap">
+                <canvas id="searchCanvas" class="searched-image"></canvas>
+            </div>
+        </aside>
+
+        <!-- 오른쪽: 검색 결과 -->
+        <div class="search-result-panel">
+            <div class="section-label">
+                <i class="fa fa-magic"></i> 시각적으로 유사한 상품
+            </div>
+
+            <div class="row g-3 g-lg-4">
+                <div class="col-6 col-md-4" th:each="result : ${results}">
+                    <a th:href="@{/shop/detail/{itemId}(itemId=${result.itemId})}">
+                        <div class="product-card">
+                            <div class="product-card__img-wrap">
+                                <img th:src="${result.imageUrl != null ? result.imageUrl : '/images/default.jpg'}"
+                                     th:alt="${result.itemTitle != null ? result.itemTitle : '상품 이미지'}"
+                                     loading="lazy">
+                            </div>
+                            <div class="product-card__body">
+                                <p class="product-card__title"
+                                   th:text="${result.itemTitle != null ? result.itemTitle : '상품 제목 없음'}"></p>
+                                <p class="product-card__price"
+                                   th:text="${result.itemPrice != null ? '₩' + result.itemPrice : '가격 없음'}"></p>
+                                <p class="product-card__similarity"
+                                   th:text="${result.hammingDistance != null ? '유사도: ' + result.hammingDistance : ''}"></p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+<script th:attr="data-imgsrc=${searchedImage}">
+    (function () {
+        var script = document.currentScript;
+        var imageSrc = script.getAttribute('data-imgsrc');
+        if (!imageSrc) return;
+
+        var detectionEl = document.getElementById('detection-data');
+        var detections = detectionEl ? JSON.parse(detectionEl.textContent) : [];
+
+        var canvas = document.getElementById('searchCanvas');
+        var ctx = canvas.getContext('2d');
+        var img = new Image();
+        var selectedIndex = 0;
+        var cropCanvases = [];
+
+        var colors = [
+            '#FF3B30', '#FF9500', '#FFCC00', '#4CD964',
+            '#5AC8FA', '#007AFF', '#5856D6', '#FF2D55'
+        ];
+        var GRAY = '#9CA3AF';
+
+        img.onload = function () {
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            if (detections.length > 0) {
+                drawBoxes(selectedIndex);
+                createCrops();
+                document.getElementById('cropSlider').style.display = 'flex';
+            } else {
+                ctx.drawImage(img, 0, 0);
+            }
+        };
+        img.src = imageSrc;
+
+        /* ── 바운딩 박스 그리기 ── */
+        function drawBoxes(activeIdx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+
+            var lineWidth = Math.max(3, img.width / 300);
+
+            detections.forEach(function (d, i) {
+                var isActive = (i === activeIdx);
+                var color = isActive ? colors[i % colors.length] : GRAY;
+                var coords = d.coordinate.map(Number);
+                var x1 = coords[0], y1 = coords[1], x2 = coords[2], y2 = coords[3];
+                var w = x2 - x1, h = y2 - y1;
+
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+
+                if (isActive) {
+                    ctx.shadowColor = color;
+                    ctx.shadowBlur = 12;
+                    ctx.strokeRect(x1, y1, w, h);
+                    ctx.shadowBlur = 0;
+                    ctx.strokeRect(x1, y1, w, h);
+
+                    // 라벨
+                    var conf = typeof d.confidence === 'number' ? d.confidence.toFixed(2) : d.confidence;
+                    var text = d.className + ' ' + conf;
+                    var fontSize = Math.max(14, img.width / 50);
+                    ctx.font = 'bold ' + fontSize + 'px Inter, sans-serif';
+                    var pad = fontSize * 0.4;
+                    var tw = ctx.measureText(text).width;
+
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x1, y1 - fontSize - pad * 2, tw + pad * 2, fontSize + pad * 2);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.textBaseline = 'top';
+                    ctx.fillText(text, x1 + pad, y1 - fontSize - pad);
+                } else {
+                    ctx.strokeRect(x1, y1, w, h);
+                }
+            });
+        }
+
+        /* ── 크롭 슬라이더 생성 ── */
+        function createCrops() {
+            var container = document.getElementById('croppedObjects');
+            if (!container) return;
+
+            detections.forEach(function (d, i) {
+                var coords = d.coordinate.map(Number);
+                var x1 = coords[0], y1 = coords[1], x2 = coords[2], y2 = coords[3];
+                var w = x2 - x1, h = y2 - y1;
+
+                // 크롭
+                var cropCanvas = document.createElement('canvas');
+                cropCanvas.width = w;
+                cropCanvas.height = h;
+                cropCanvas.getContext('2d').drawImage(img, x1, y1, w, h, 0, 0, w, h);
+                cropCanvases.push(cropCanvas);
+
+                // 요소 생성
+                var wrap = document.createElement('div');
+                wrap.className = 'cropped-object' + (i === 0 ? ' active' : '');
+                wrap.dataset.index = i;
+                wrap.title = d.className + ' - 클릭: 선택 / 재클릭: 검색';
+
+                var cropImg = document.createElement('img');
+                cropImg.src = cropCanvas.toDataURL('image/png');
+                cropImg.alt = d.className;
+
+                var label = document.createElement('span');
+                label.className = 'cropped-object__label';
+                label.textContent = d.className;
+
+                wrap.appendChild(cropImg);
+                wrap.appendChild(label);
+
+                // 클릭 핸들러
+                wrap.addEventListener('click', function () {
+                    if (selectedIndex === i) {
+                        // 이미 선택된 상태 → 검색 실행
+                        searchWithCrop(cropCanvases[i], d.className);
+                    } else {
+                        // 선택 전환
+                        selectCrop(i);
+                    }
+                });
+
+                container.appendChild(wrap);
+            });
+
+            // 슬라이더 스크롤 버튼
+            var track = container;
+            document.getElementById('cropScrollLeft').addEventListener('click', function () {
+                track.scrollLeft -= 150;
+            });
+            document.getElementById('cropScrollRight').addEventListener('click', function () {
+                track.scrollLeft += 150;
+            });
+        }
+
+        /* ── 크롭 선택 ── */
+        function selectCrop(idx) {
+            selectedIndex = idx;
+            drawBoxes(idx);
+
+            // active 클래스 갱신
+            var items = document.querySelectorAll('.cropped-object');
+            items.forEach(function (el) {
+                el.classList.toggle('active', Number(el.dataset.index) === idx);
+            });
+        }
+
+        /* ── 크롭으로 재검색 (비동기 Fetch API) ── */
+        function searchWithCrop(cropCanvas, className) {
+            cropCanvas.toBlob(function (blob) {
+                var file = new File([blob], 'crop.png', {type: 'image/png'});
+
+                var form = document.querySelector('.search-form');
+                if (!form) return;
+
+                // CSRF 토큰 등 폼에 있는 데이터 그대로 사용
+                var formData = new FormData(form);
+                formData.set('imgFile', file);
+                formData.set('query', className);
+
+                // 위에 검색창 값도 변경
+                var searchInput = document.getElementById('searchInput');
+                if (searchInput) searchInput.value = className;
+
+                // 우측 검색 결과 패널에 반투명 로딩 이펙트 추가
+                var resultPanel = document.querySelector('.search-result-panel');
+                if (resultPanel) {
+                    resultPanel.style.transition = 'opacity 0.3s ease';
+                    resultPanel.style.opacity = '0.4';
+                    resultPanel.style.pointerEvents = 'none';
+                }
+
+                // AJAX Fetch 통신 (데이터만 전송받음)
+                fetch('/search/img/crop', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // 받아온 JSON 상품 리스트(`data`)로 화면 갱신
+                    renderSearchResults(data);
+                })
+                .catch(error => {
+                    console.error('검색 중 오류가 발생했습니다:', error);
+                    alert('검색 중 오류가 발생했습니다.');
+                })
+                .finally(() => {
+                    // 데이터 로딩이 끝나면 투명도 원상복구
+                    if (resultPanel) {
+                        resultPanel.style.opacity = '1';
+                        resultPanel.style.pointerEvents = 'auto';
+                    }
+                });
+            }, 'image/png');
+        }
+
+        /* ── 검색 결과 렌더링 (클라이언트 사이드 랜더링) ── */
+        function renderSearchResults(results) {
+            var container = document.querySelector('.search-result-panel .row');
+            if (!container) return;
+
+            // 기존 결과 비우기
+            container.innerHTML = '';
+
+            if (!results || results.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center py-5">유사한 상품을 찾을 수 없습니다.</div>';
+                return;
+            }
+
+            // 루프를 돌며 카드 하나씩 생성
+            results.forEach(function(item) {
+                var cardHtml = `
+                    <div class="col-6 col-md-4">
+                        <a href="/shop/detail/${item.itemId}">
+                            <div class="product-card">
+                                <div class="product-card__img-wrap">
+                                    <img src="${item.imageUrl || '/images/default.jpg'}" 
+                                         alt="${item.itemTitle || '상품 이미지'}" 
+                                         loading="lazy">
+                                </div>
+                                <div class="product-card__body">
+                                    <p class="product-card__title">${item.itemTitle || '상품 제목 없음'}</p>
+                                    <p class="product-card__price">${item.itemPrice ? '₩' + item.itemPrice : '가격 없음'}</p>
+                                    <p class="product-card__similarity">${item.hammingDistance ? '유사도: ' + item.hammingDistance : ''}</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            });
+            
+            // 상단으로 스크롤 부드럽게 이동 (선택 사항)
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    })();
+</script>
+</body>
+</html>

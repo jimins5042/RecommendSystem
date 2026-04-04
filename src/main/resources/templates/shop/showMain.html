@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/header :: header('메인 페이지')}"></head>
+
+<body>
+<div class="page-wrapper">
+
+    <!-- Navbar -->
+    <div th:insert="~{fragments/bodyHeader :: bodyHeader}"></div>
+
+    <!-- Search Area -->
+    <div th:insert="~{fragments/searchBar :: searchBar}"></div>
+
+    <!-- ===== 추천 상품 섹션 ===== -->
+    <section class="section-wrap" th:if="${items != null}">
+        <div class="container">
+
+            <h2 class="section-title">오늘의 추천 상품</h2>
+            <p class="section-subtitle">이미지 검색으로 원하는 상품을 추천 받으세요</p>
+
+            <div class="scroll-container-wrap">
+                <button class="scroll-btn scroll-btn-left" id="recommendScrollLeft">
+                    <i class="fa fa-chevron-left"></i>
+                </button>
+                <div class="scroll-container" id="recommendScroll">
+                    <div class="scroll-card" th:each="item : ${items}">
+                        <a th:href="@{/shop/detail/{id}(id=${item.itemId})}">
+                            <div class="product-card">
+                                <div class="product-card__img-wrap" th:if="${item.imageUrl != null}">
+                                    <img th:src="${item.imageUrl}" th:alt="${item.itemTitle}" loading="lazy">
+                                </div>
+                                <div class="product-card__no-img" th:if="${item.imageUrl == null}">
+                                    <i class="fa fa-image fa-2x"></i>
+                                </div>
+                                <div class="product-card__body">
+                                    <p class="product-card__title" th:text="${item.itemTitle}"></p>
+                                    <p class="product-card__price"
+                                       th:text="'₩' + ${#numbers.formatInteger(item.itemPrice, 0, 'COMMA')}"></p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <button class="scroll-btn scroll-btn-right" id="recommendScrollRight">
+                    <i class="fa fa-chevron-right"></i>
+                </button>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ===== 카테고리 탭 섹션 ===== -->
+    <section class="section-wrap">
+        <div class="container">
+
+            <h2 class="section-title">카테고리별 상품</h2>
+            <p class="section-subtitle">관심 있는 카테고리를 선택해보세요</p>
+
+            <div class="category-tab-header">
+                <button class="category-tab active" data-category="all">전체</button>
+                <button class="category-tab" data-category="신발">신발</button>
+                <button class="category-tab" data-category="선글라스">선글라스</button>
+                <button class="category-tab" data-category="의류">의류</button>
+                <button class="category-tab" data-category="가방">가방</button>
+                <button class="category-tab" data-category="식음료">식음료</button>
+            </div>
+
+            <div class="category-product-grid" id="categoryProductGrid">
+                <!-- JS로 상품 카드가 렌더링됩니다 -->
+                <div class="category-loading">
+                    <i class="fa fa-spinner fa-spin fa-2x"></i>
+                    <p>상품을 불러오는 중...</p>
+                </div>
+            </div>
+
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <div th:insert="~{fragments/footer :: footer}"></div>
+
+</div><!-- /page-wrapper -->
+
+<script>
+
+    /* 추천 상품 무한 스크롤 */
+    const recommendScroll = document.getElementById('recommendScroll');
+    const recommendLeft = document.getElementById('recommendScrollLeft');
+    const recommendRight = document.getElementById('recommendScrollRight');
+    function getScrollStep() {
+        if (!recommendScroll || !recommendScroll.firstElementChild) return 460;
+        const card = recommendScroll.firstElementChild;
+        return card.offsetWidth + 16; /* card width + gap */
+    }
+
+    /* 아이템 복제하여 무한 루프 준비 */
+    if (recommendScroll) {
+        const originalCards = Array.from(recommendScroll.children);
+        originalCards.forEach(card => {
+            const clone = card.cloneNode(true);
+            recommendScroll.appendChild(clone);
+        });
+    }
+
+    function scrollForward() {
+        if (!recommendScroll) return;
+        const halfWidth = recommendScroll.scrollWidth / 2;
+        if (recommendScroll.scrollLeft >= halfWidth) {
+            recommendScroll.style.scrollBehavior = 'auto';
+            recommendScroll.scrollLeft -= halfWidth;
+            recommendScroll.style.scrollBehavior = 'smooth';
+        }
+        recommendScroll.scrollLeft += getScrollStep();
+    }
+
+    recommendLeft && recommendLeft.addEventListener('click', () => {
+        scrollForward();
+    });
+    recommendRight && recommendRight.addEventListener('click', () => {
+        scrollForward();
+    });
+
+    let autoSlideTimer = setInterval(scrollForward, 4000);
+
+    recommendScroll && recommendScroll.addEventListener('mouseenter', () => {
+        clearInterval(autoSlideTimer);
+    });
+    recommendScroll && recommendScroll.addEventListener('mouseleave', () => {
+        autoSlideTimer = setInterval(scrollForward, 4000);
+    });
+
+    /* 카테고리 탭 */
+    const categoryTabs = document.querySelectorAll('.category-tab');
+    const categoryGrid = document.getElementById('categoryProductGrid');
+    let currentCategory = 'all';
+    let currentPage = 1;
+
+    function loadCategory(category, page) {
+        currentCategory = category;
+        currentPage = page || 1;
+
+        categoryGrid.innerHTML =
+            '<div class="category-loading"><i class="fa fa-spinner fa-spin fa-2x"></i><p>상품을 불러오는 중...</p></div>';
+
+        fetch('/shop/category', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                type: encodeURIComponent(category),
+                page: currentPage
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                const items = data.items || [];
+                const pageDto = data.pageDto || {};
+
+                if (items.length === 0) {
+                    categoryGrid.innerHTML =
+                        '<div class="category-empty"><i class="fa fa-box-open fa-2x"></i><p>해당 카테고리에 상품이 없습니다.</p></div>';
+                    return;
+                }
+
+                let html = '<div class="category-items">';
+                html += items.map(item => `
+          <a href="/shop/detail/${item.itemId}">
+            <div class="product-card">
+              ${item.imageUrl
+                    ? `<div class="product-card__img-wrap"><img src="${item.imageUrl}" alt="${item.itemTitle || ''}" loading="lazy"></div>`
+                    : `<div class="product-card__no-img"><i class="fa fa-image fa-2x"></i></div>`}
+              <div class="product-card__body">
+                <p class="product-card__title">${item.itemTitle || ''}</p>
+                <p class="product-card__price">${item.itemPrice != null ? '₩' + Number(item.itemPrice).toLocaleString() : '가격 없음'}</p>
+              </div>
+            </div>
+          </a>
+        `).join('');
+                html += '</div>';
+
+                html += `<div class="category-more-wrap"><a href="/shop/list?type=${encodeURIComponent(category)}" class="category-more-btn">상품 더보기 <i class="fa fa-chevron-right"></i></a></div>`;
+
+
+                /* 페이지네이션 */
+                if (pageDto.totalPages > 1) {
+                    html += '<nav class="category-pagination"><ul class="pagination">';
+                    if (pageDto.pageNo > 1) {
+                        html += `<li class="page-item"><a class="page-link" href="#" data-page="${pageDto.pageNo - 1}"><i class="fa fa-chevron-left"></i></a></li>`;
+                    }
+                    for (let i = pageDto.startPage; i <= pageDto.endPage; i++) {
+                        html += `<li class="page-item ${i === pageDto.pageNo ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+                    }
+                    if (pageDto.pageNo < pageDto.totalPages) {
+                        html += `<li class="page-item"><a class="page-link" href="#" data-page="${pageDto.pageNo + 1}"><i class="fa fa-chevron-right"></i></a></li>`;
+                    }
+                    html += '</ul></nav>';
+                }
+
+                categoryGrid.innerHTML = html;
+
+                /* 페이지 버튼 이벤트 바인딩 */
+                categoryGrid.querySelectorAll('.category-pagination .page-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        loadCategory(currentCategory, Number(link.dataset.page));
+                        categoryGrid.scrollIntoView({ behavior: 'auto' });
+                    });
+                });
+            })
+            .catch(() => {
+                categoryGrid.innerHTML =
+                    '<div class="category-empty"><i class="fa fa-exclamation-triangle fa-2x"></i><p>상품을 불러오지 못했습니다.</p></div>';
+            });
+    }
+
+    categoryTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            categoryTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            loadCategory(tab.dataset.category, 1);
+        });
+    });
+
+    /* 페이지 로드 시 첫 번째 탭 자동 로드 */
+    loadCategory('all', 1);
+</script>
+
+</body>
+</html>

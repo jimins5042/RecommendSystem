@@ -4,11 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import shop.RecommendSystem.MessageQueue.RedisService;
+import shop.RecommendSystem.MessageQueue.MQService;
 import shop.RecommendSystem.dto.ImageInfo;
-import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.recommend.ImageFeature.PHash;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
 
@@ -16,7 +14,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
@@ -25,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class UploadService {
 
     private final ItemMapper itemMapper;
-    private final RedisService redisService;
+    private final MQService MQService;
 
 
     @Value("${resourcePath}")

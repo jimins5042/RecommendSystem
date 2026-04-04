@@ -1,4 +1,4 @@
-package shop.RecommendSystem.repository;
+package shop.RecommendSystem.shoppingMall;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -52,13 +52,13 @@ public class ShopRepository {
             item.setImageUrlList(imgaeList);
         }
 
-        if(item.getItemImageLink() != null) {
-            try {
-                item.setItemImageLink(imgCtrl.cropAndResizeImage(item.getItemImageLink(), 600, 600, 0));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
+//        if(item.getImageUrl() != null) {
+//            try {
+//                item.setImageUrl(imgCtrl.cropAndResizeImage(item.getImageUrl(), 600, 600, 0));
+//            } catch (Exception e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
 
         return item;
     }
@@ -77,35 +77,19 @@ public class ShopRepository {
         return itemMapper.findAll(map);
     }
 
-    public List<Item> findThumbnailAll(Long page, Long size) throws Exception {
+    public List<Item> findThumbnailAll(Long page, Long size, String category) throws Exception {
         if (page == null) {
             page = 1L;
         }
         if (size == null) {
             size = 10L;
         }
-        Map<String, Long> map = new HashMap<>();
+        Map<String, Object> map = new HashMap<>();
         map.put("offset", page);
         map.put("size", size);
+        map.put("category", category);
 
         List<Item> items = itemMapper.findThumbnailAll(map);
-
-        ExecutorService executor = Executors.newFixedThreadPool(10); // 최대 10개의 스레드를 사용
-        List<CompletableFuture<Void>> futures = items.stream()
-                .map(item -> CompletableFuture.runAsync(() -> {
-                    try {
-                        String url = imgCtrl.cropAndResizeImage(item.getItemImageLink(), 400, 300, 1);
-                        item.setItemImageLink(url);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }, executor))  // Executor를 명시적으로 지정
-                .collect(Collectors.toList());
-
-        // 모든 작업이 완료될 때까지 기다림
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
-        executor.shutdown(); // 작업 완료 후 Executor 종료
 
         return items;
     }
