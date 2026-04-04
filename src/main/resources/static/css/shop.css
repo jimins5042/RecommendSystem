@@ -1231,6 +1231,54 @@ img {
   margin-bottom: var(--space-2);
 }
 
+/* 썸네일 갤러리 */
+.pdp-thumbnails-wrap {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.pdp-thumbnails-wrap::-webkit-scrollbar {
+  height: 4px;
+}
+
+.pdp-thumbnails-wrap::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.pdp-thumbnail-item {
+  flex: 0 0 60px;
+  aspect-ratio: 1 / 1;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  opacity: 0.6;
+}
+
+.pdp-thumbnail-item:hover {
+  opacity: 1;
+  border-color: var(--color-border);
+}
+
+.pdp-thumbnail-item.active {
+  opacity: 1;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.pdp-thumbnail-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 
 
 

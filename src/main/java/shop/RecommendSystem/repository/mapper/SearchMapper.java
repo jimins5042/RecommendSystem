@@ -2,6 +2,7 @@ package shop.RecommendSystem.repository.mapper;
 
 import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import shop.RecommendSystem.dto.ImageInfo;
 import shop.RecommendSystem.dto.PreFilterDto;
 import shop.RecommendSystem.dto.SearchResult;
@@ -30,6 +31,7 @@ public interface SearchMapper {
 
     ArrayList<PreFilterDto> speedTest();
 
-    List<SearchResult> findPreFilterTargetV2(List<String> keySet);
+    //List<SearchResult> findPreFilterTargetV2(List<String> keySet);
+    List<SearchResult> findPreFilterTargetV2(@Param("keySet") List<String> keySet, @Param("id")Long id);
 
 }

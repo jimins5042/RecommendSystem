@@ -56,7 +56,7 @@ public class SearchService {
             byte[] feature = (byte[]) req.get("features");
             //map = filter.searchSimilarItem(order, feature);
 
-            return filter.searchSimilarItem(order, feature, resultSize);
+            return filter.searchSimilarItem(order, feature, resultSize, null);
 
         } else if (searchWay.equals("LSH")) {
             Map<String, Object> req = vgg16.sendImageToFastAPI(file);
@@ -105,23 +105,22 @@ public class SearchService {
     }
 
 
-    /**
-     * pHash를 이용해 유사 이미지를 탐색하는 함수
-     *
-     * @param hashcode   : 16진수로 변환된 pHash 값
-     * @param resultSize : 반환받을 탐색 결과 갯수
-     * @return : 유사도가 큰 순으로 정렬된 상품 정보 데이터
-     */
+//    /**
+//     * pHash를 이용해 유사 이미지를 탐색하는 함수
+//     *
+//     * @param hashcode   : 16진수로 변환된 pHash 값
+//     * @param resultSize : 반환받을 탐색 결과 갯수
+//     * @return : 유사도가 큰 순으로 정렬된 상품 정보 데이터
+//     */
 
-    public List<SearchResult> searchSimilarItems(String hashcode, int resultSize) {
+//    public List<SearchResult> searchSimilarItems(String hashcode, int resultSize) {
+//
+//        HashMap<String, Double> map = prefix.searchSimilarItem(hashcode);
+//        return searchSimilarItems(map, resultSize);
+//    }
 
-        HashMap<String, Double> map = prefix.searchSimilarItem(hashcode);
-        return searchSimilarItems(map, resultSize);
-    }
+    public List<SearchResult> searchSimilarItems(String order, byte[] feature, int resultSize, Long id) throws JsonProcessingException {
 
-    public List<SearchResult> searchSimilarItems(String order, byte[] feature, int resultSize) throws JsonProcessingException {
-
-        return filter.searchSimilarItem(order, feature, resultSize);
-
+        return filter.searchSimilarItem(order, feature, resultSize, id);
     }
 }

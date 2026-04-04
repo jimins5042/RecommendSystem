@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.fasterxml.jackson.databind.type.LogicalType.Map;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -66,7 +68,7 @@ public class BitwiseANDFiltering {
      * @throws JsonProcessingException
      */
 
-    public List<SearchResult> searchSimilarItem(String layerList, byte[] targetBitArray, int resultSize) throws JsonProcessingException {
+    public List<SearchResult> searchSimilarItem(String layerList, byte[] targetBitArray, int resultSize, Long id) throws JsonProcessingException {
 
         // 1. 추출한 레이어의 크기 순서를 이용하여, 비교할 이미지 후보군의 수를 300개 이하로 줄임
         ArrayList<PreFilterDto> preprocess = preprocessList(layerList);
@@ -76,7 +78,7 @@ public class BitwiseANDFiltering {
                 .map(PreFilterDto::getImageUuid)
                 .collect(Collectors.toList());
 
-        List<SearchResult> candidates = searchMapper.findPreFilterTargetV2(uuidList);
+        List<SearchResult> candidates = searchMapper.findPreFilterTargetV2(uuidList, id);
 
         // 3. 코사인 유사도를 이용하여 유사도 계산 후 저장
         for (SearchResult candidate : candidates) {

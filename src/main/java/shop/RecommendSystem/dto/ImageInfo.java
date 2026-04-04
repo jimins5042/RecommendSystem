@@ -13,7 +13,6 @@ import java.util.Date;
 @AllArgsConstructor
 public class ImageInfo {
 
-    private Long imageId;
     private Long itemId;
     private String imageUuid;
     private String imageOriginalName;

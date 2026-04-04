@@ -4,6 +4,10 @@
 <!--ItemMapper의 위치를 적어줌-->
 <mapper namespace="shop.RecommendSystem.repository.mapper.ItemMapper">
 
+    <resultMap id="Item" type="Item">
+        <result column="IMG_FEATURE_VALUE" property="bitarray"/>
+    </resultMap>
+
     <!--아이템 객체의 속성 값들을 넣어줌-->
     <insert id="save" parameterType="Item">
         <selectKey keyProperty="itemId" resultType="long" order="BEFORE">
@@ -15,31 +19,44 @@
 
 
     <insert id="insertImageInfo" parameterType="shop.RecommendSystem.dto.ImageInfo">
-        <selectKey keyProperty="imageId" resultType="long" order="BEFORE">
-            SELECT image_info_seq.NEXTVAL FROM dual
-        </selectKey>
-        INSERT INTO image_info (image_id, image_uuid, image_original_name, image_url, image_hash_code, item_id)
-        VALUES (#{imageId}, #{imageUuid}, #{imageOriginalName}, #{imageUrl}, #{imageHashCode}, #{itemId})
+        INSERT INTO image_info (image_uuid, image_original_name, image_url, image_hash_code, item_id)
+        VALUES (#{imageUuid}, #{imageOriginalName}, #{imageUrl}, #{imageHashCode}, #{itemId})
     </insert>
 
-    <!--글 상세 보기-->
-    <select id="findById" parameterType="Long" resultType="Item">
 
-        SELECT s.item_id,
-               s.item_title,
-               s.item_content,
-               s.item_date,
-               s.item_price,
-               i.image_url,
-               i.img_feature_order as hashCode,
-               i.img_feature_value as bitArray
+    <insert id="insertBulkImageInfo">
+        INSERT ALL
+        <foreach collection="list" item="image">
+            INTO image_info
+            (image_uuid, image_original_name, image_url, image_hash_code, item_id)
+            VALUES
+            (#{image.imageUuid}, #{image.imageOriginalName}, #{image.imageUrl}, #{image.imageHashCode}, #{image.itemId})
+        </foreach>
+        SELECT 1 FROM dual
+    </insert>
+
+
+
+    <!--글 상세 보기-->
+    <select id="findById" parameterType="Long" resultMap="Item">
+
+        SELECT
+            s.item_id,
+            s.item_title,
+            s.item_content,
+            s.created_at,
+            s.item_price,
+            i.image_url,
+            i.img_feature_order as hashCode,
+            i.img_feature_value as bitArray
 
         FROM shop_board s
-                 LEFT JOIN
-             image_info i
-             ON
-                 s.item_id = i.item_id
+        LEFT JOIN
+            image_info i
+        ON
+            s.item_id = i.item_id
         WHERE s.item_id = #{id}
+        -- and rownum &lt;= 1
     </select>
 
     <select id="findByIdToPhash" parameterType="Long" resultType="Item">
@@ -47,7 +64,7 @@
         SELECT s.item_id,
                s.item_title,
                s.item_content,
-               s.item_date,
+               s.created_at,
                s.item_price,
                i.image_url,
                i.image_hash_code as hashCode
@@ -83,7 +100,7 @@
                 FROM shop_board s
                          LEFT JOIN image_info i
                                    ON s.item_id = i.item_id
-                WHERE s.item_image_link IS NOT NULL
+                WHERE i.image_url IS NOT NULL
                 ORDER BY s.item_id DESC
             ) T WHERE ROWNUM &lt;= (#{offset}+1) * #{size}
       ) WHERE rn &gt; #{offset} * #{size}
@@ -102,5 +119,62 @@
                 ON s.item_id = i.item_id
             WHERE s.item_id =#{id}
     </delete>
+
+    <insert id="bulkInsert">
+        INSERT ALL
+        <foreach collection="list" item="item">
+            INTO shop_board
+            (item_id, item_title, item_content, item_price, updated_at, category)
+            VALUES
+            (#{item.itemId}, #{item.itemTitle}, #{item.itemContent}, #{item.itemPrice}, SYSDATE, #{item.category})
+        </foreach>
+        SELECT 1 FROM dual
+    </insert>
+
+
+    <select id="getShopBoardSeq" resultType="Long">
+        SELECT shop_board_seq.NEXTVAL FROM dual
+    </select>
+
+    <select id="getImageInfoSeq" resultType="Long">
+        SELECT IMAGE_INFO_SEQ.NEXTVAL FROM dual
+    </select>
+
+    <!-- Feature 스테이징 테이블 생성 -->
+    <update id="createFeatureStaging">
+        CREATE TABLE image_feature_staging (
+                                               image_uuid  VARCHAR2(500),
+            img_feature_value    BLOB,
+            img_feature_order    VARCHAR2(1000)
+        )
+    </update>
+
+    <!-- 스테이징 테이블에 bulk insert -->
+    <insert id="insertFeatureStaging">
+        INSERT ALL
+        <foreach collection="list" item="img">
+            INTO image_feature_staging
+            (image_uuid, img_feature_value, img_feature_order)
+            VALUES
+            (#{img.imageUuid}, #{img.imgFeatureValue}, #{img.imgFeatureOrder})
+        </foreach>
+        SELECT 1 FROM dual
+    </insert>
+
+    <!-- 스테이징 → image_info MERGE -->
+    <update id="mergeFeatureFromStaging">
+        MERGE INTO image_info t
+        USING image_feature_staging s
+        ON (t.image_uuid = s.image_uuid)
+        WHEN MATCHED THEN UPDATE SET
+            t.img_feature_value = s.img_feature_value,
+            t.img_feature_order = s.img_feature_order,
+            t.updated_at = CURRENT_TIMESTAMP
+    </update>
+
+    <!-- 스테이징 테이블 삭제 -->
+    <update id="dropFeatureStaging">
+        DROP TABLE image_feature_staging
+    </update>
 
 </mapper>

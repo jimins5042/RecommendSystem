@@ -26,11 +26,21 @@
         <!-- 왼쪽: 이미지 -->
         <div class="col-md-5">
           <div class="pdp-image-area">
-            <div class="detail-image-wrap" th:if="${item.itemImageLink}">
-              <img th:src="${item.itemImageLink}" th:alt="${item.itemTitle}" loading="lazy">
+            <div class="detail-image-wrap" th:if="${item.imageUrl}">
+              <img th:src="${item.imageUrl}" th:alt="${item.itemTitle}" loading="lazy" id="main-pdp-image">
             </div>
-            <div class="product-card__no-img" th:if="${item.itemImageLink == null}">
+            <div class="product-card__no-img" th:if="${item.imageUrl == null}">
               <i class="fa fa-image fa-3x"></i>
+            </div>
+
+            <!-- 썸네일 리스트 (imageUrlList 사용) -->
+            <div class="pdp-thumbnails-wrap" th:if="${item.imageUrlList != null and not #lists.isEmpty(item.imageUrlList)}">
+              <div class="pdp-thumbnail-item" 
+                   th:each="thumbUrl, iterStat : ${item.imageUrlList}"
+                   th:classappend="${thumbUrl == item.imageUrl} ? 'active' : ''"
+                   onclick="changeMainImage(this)">
+                <img th:src="${thumbUrl}" th:alt="${item.itemTitle} + ' thumbnail'">
+              </div>
             </div>
           </div>
         </div>
@@ -123,7 +133,7 @@
                 <i class="fa fa-calendar-alt"></i>
                 <div>
                   <strong>등록일</strong>
-                  <span th:text="${#dates.format(item.itemDate, 'yyyy-MM-dd')}"></span>
+                  <span th:text="${#dates.format(item.createdAt, 'yyyy-MM-dd')}"></span>
                 </div>
               </li>
             </ul>
@@ -262,6 +272,22 @@
   wishBtn && wishBtn.addEventListener('click', () => {
     wishBtn.classList.toggle('wished');
   });
+
+  /* 이미지 전환 함수 */
+  function changeMainImage(thumbElement) {
+    const mainImg = document.getElementById('main-pdp-image');
+    const newSrc = thumbElement.querySelector('img').src;
+    
+    if (mainImg) {
+      mainImg.src = newSrc;
+      
+      // 활성 상태 변경
+      document.querySelectorAll('.pdp-thumbnail-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      thumbElement.classList.add('active');
+    }
+  }
 </script>
 
 </body>

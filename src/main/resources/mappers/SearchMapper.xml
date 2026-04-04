@@ -22,20 +22,26 @@
     </select>
 
 
-    <select id="findPreFilterTargetV2" parameterType="list" resultType="SearchResult">
+<!--    <select id="findPreFilterTargetV2" parameterType="list" resultType="SearchResult">-->
+    <select id="findPreFilterTargetV2" parameterType="map" resultType="SearchResult">
         SELECT
-        s.item_id, s.item_title, s.item_price, i.image_url, i.image_uuid, i.img_feature_value as imgFeatureValue
+            s.item_id, s.item_title, s.item_price,
+            i.image_url, i.image_uuid, i.img_feature_value as imgFeatureValue
         FROM shop_board s
         INNER JOIN image_info i
-        ON s.item_id = i.item_id
-
+            ON s.item_id = i.item_id
         WHERE 1=1
-        and i.image_uuid in (
-        <foreach collection="list" item="item" separator=", ">
-            #{item}
-        </foreach>
-        )
 
+        <if test="id != null">
+            AND i.item_id != #{id}
+        </if>
+
+        <if test="keySet != null and keySet.size() > 0">
+            AND i.image_uuid IN
+            <foreach collection="keySet" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
     </select>
 
     <select id="findPreFilterTarget" parameterType="list" resultType="PreFilterDto">

@@ -40,7 +40,17 @@ public class ShopRepository {
     }
 
     public Item findById(Long itemId) {
-        Item item = itemMapper.findById(itemId);
+        List<Item> itemList = itemMapper.findById(itemId);
+        if(itemList == null || itemList.isEmpty()) {
+            return null;
+        }
+
+        Item item = itemList.get(0);
+
+        if(itemList.size() > 1) {
+            List<String> imgaeList = itemList.stream().map(Item::getImageUrl).toList();
+            item.setImageUrlList(imgaeList);
+        }
 
         if(item.getItemImageLink() != null) {
             try {

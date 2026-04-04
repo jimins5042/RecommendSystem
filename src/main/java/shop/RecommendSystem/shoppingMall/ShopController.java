@@ -87,7 +87,8 @@ public class ShopController {
             //추천 상품 조회
             if (item.getHashCode() != null) {
                 //List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), 8);
-                List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), item.getBitArray(), 8);
+                //List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), item.getBitArray().getBytes(), 8);
+                List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), item.getBitArray(), 8, id);
                 model.addAttribute("results", results);
             }
 

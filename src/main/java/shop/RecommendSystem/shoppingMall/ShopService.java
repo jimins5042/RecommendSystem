@@ -21,6 +21,8 @@ public class ShopService {
 
     public Long insertItem(Item itemForm, MultipartFile[] files) throws IOException {
 
+        boolean isUpload = false;
+
         Item item = Item.builder()
                 .itemTitle(itemForm.getItemTitle())
                 .itemContent(itemForm.getItemContent())
@@ -32,10 +34,14 @@ public class ShopService {
 
         //이미지 특징 추출 후 저장
         if (files != null && files.length > 0) {
-            boolean isUpload = uploadService.uploadFile(files, itemId);
+            isUpload = uploadService.uploadFile(files, itemId);
+        }
+        if (isUpload) {
+            log.info("==== 상품추가 성공 ====");
+        } else {
+            log.info("==== 상품추가 실패 ====");
         }
 
-        log.info("= 상품추가 성공 =");
         return itemId;
     }
 

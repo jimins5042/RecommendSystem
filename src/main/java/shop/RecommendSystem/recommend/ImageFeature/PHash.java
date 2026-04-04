@@ -30,13 +30,16 @@ public class PHash {
 
         return calPHash(img);
     }
+
     public String getPHash(MultipartFile imgFile) throws IOException {
-
-        // 0. MultipartFile을 InputStream으로 받아 BufferedImage로 변환
-        InputStream inputStream = imgFile.getInputStream();
-        BufferedImage img = ImageIO.read(inputStream);
-
-        return calPHash(img);
+        try {
+            // 0. MultipartFile을 InputStream으로 받아 BufferedImage로 변환
+            InputStream inputStream = imgFile.getInputStream();
+            BufferedImage img = ImageIO.read(inputStream);
+            return calPHash(img);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public String calPHash(BufferedImage img) throws IOException {
