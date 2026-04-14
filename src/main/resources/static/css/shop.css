@@ -1106,11 +1106,36 @@ img {
   font-size: var(--font-size-sm);
   cursor: pointer;
   transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .img-upload-area:hover {
   border-color: var(--color-primary);
   background-color: var(--color-primary-light);
+}
+
+/* ── 이미지 검색 모달 ─────────────────────────── */
+#imgSearchModal .img-upload-area {
+  min-height: 350px;
+}
+
+#imgSearchModal .modal-title i {
+  color: var(--color-primary);
+}
+
+#imgPreview {
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 /* ── 14. Footer ──────────────────────────────── */

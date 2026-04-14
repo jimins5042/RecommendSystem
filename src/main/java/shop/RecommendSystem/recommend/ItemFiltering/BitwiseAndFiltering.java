@@ -40,7 +40,8 @@ public class BitwiseAndFiltering {
 
     // 추출한 25개의 레이어의 번호를 512비트 크기의 비트 벡터로 변환 후 저장
     public byte[] addSearchData(String list) throws JsonProcessingException {
-        byte[] bitArray = new byte[64];
+        //byte[] bitArray = new byte[64];
+        byte[] bitArray = new byte[40];
         ObjectMapper objectMapper = new ObjectMapper();
 
         int[] paletteArray = objectMapper.readValue(list, int[].class);

@@ -33,16 +33,16 @@
           <input type="number" name="itemPrice" id="itemPrice" placeholder="가격을 입력하세요 (예: 15000)" step="1" min="0">
         </div>
 
-        <!-- 이미지 업로드 -->
-        <div class="mb-4">
-          <label>상품 이미지</label>
-          <div class="img-upload-area" id="imgUploadArea">
-            <i class="fa fa-cloud-upload-alt fa-2x mb-2" style="color: var(--color-text-muted);"></i>
-            <p id="uploadLabel">클릭하여 이미지를 업로드하세요</p>
+          <div class="mb-4">
+              <label>상품 이미지</label>
+              <div class="img-upload-area" id="imgUploadArea">
+                  <img id="imgPreview" src="" alt="미리보기">
+                  <i class="fa fa-cloud-upload-alt fa-2x mb-2" id="uploadIcon"></i>
+                  <p id="uploadLabel">클릭하여 이미지를 업로드하세요</p>
+              </div>
+              <input type="file" name="imgFile" id="imgFile" class="d-none" accept="image/*">
+              <input type="hidden" name="palette" id="palette">
           </div>
-          <input type="file" name="imgFile" id="imgFile" class="d-none" accept="image/*">
-          <input type="hidden" name="palette" id="palette">
-        </div>
 
         <!-- 제출 버튼 -->
         <div class="d-flex gap-3">
@@ -70,21 +70,22 @@
 
   imgUploadArea.addEventListener('click', () => imgFile.click());
 
-  imgFile.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    uploadLabel.textContent = file.name;
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      img.src = e.target.result;
-      img.onload = () => {
-        const palette = colorThief.getPalette(img, 5);
-        paletteInput.value = JSON.stringify(palette);
-      };
-    };
-    reader.readAsDataURL(file);
+  imgFile.addEventListener('change', () => {
+      if (imgFile.files.length > 0) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+              const preview = document.getElementById('imgPreview');
+              const icon = document.getElementById('uploadIcon');
+              const label = document.getElementById('uploadLabel');
+              preview.src = e.target.result;
+              preview.style.display = 'block';
+              icon.style.display = 'none';
+              label.style.display = 'none';
+          };
+          reader.readAsDataURL(imgFile.files[0]);
+      }
   });
+
 </script>
 
 </body>

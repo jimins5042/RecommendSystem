@@ -13,9 +13,9 @@ import java.util.HashMap;
         url = "${fastApiUrl}"
 )
 public interface VGG16ApiInterface {
-    @PostMapping(value = "/process-image/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/efficientNet/process-image/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     VGG16ApiDto sendFile(@RequestPart("file") MultipartFile file);
 
-    @PostMapping(value = "/process-image/crop/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/efficientNet/process-image/crop/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     VGG16ApiDto sendCropFile(@RequestPart("file") MultipartFile file);
 }

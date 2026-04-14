@@ -33,7 +33,7 @@ public class SearchController {
 
     @PostMapping("/search/img")
     public String insert(
-            @RequestParam("query") String query,
+            //@RequestParam("query") String query,
             @RequestParam("imgFile") MultipartFile file, Model model) throws Exception {
 
         // VGG16 API 호출 (특징점 + 객체 감지)
@@ -73,7 +73,6 @@ public class SearchController {
     @PostMapping("/search/img/crop")
     @ResponseBody
     public List<SearchResult> crop(
-            @RequestParam(value = "query", required = false) String query,
             @RequestParam("imgFile") MultipartFile file) throws Exception {
         
         // 크롭 이미지 전용 검색 (JSON 리스트 반환)

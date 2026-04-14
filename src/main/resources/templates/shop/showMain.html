@@ -89,6 +89,7 @@
     const recommendScroll = document.getElementById('recommendScroll');
     const recommendLeft = document.getElementById('recommendScrollLeft');
     const recommendRight = document.getElementById('recommendScrollRight');
+
     function getScrollStep() {
         if (!recommendScroll || !recommendScroll.firstElementChild) return 460;
         const card = recommendScroll.firstElementChild;
@@ -148,7 +149,8 @@
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                type: encodeURIComponent(category),
+                // category: encodeURIComponent(category),
+                category: category,
                 page: currentPage
             })
         })
@@ -204,7 +206,7 @@
                     link.addEventListener('click', (e) => {
                         e.preventDefault();
                         loadCategory(currentCategory, Number(link.dataset.page));
-                        categoryGrid.scrollIntoView({ behavior: 'auto' });
+                        categoryGrid.scrollIntoView({behavior: 'auto'});
                     });
                 });
             })
@@ -224,6 +226,7 @@
 
     /* 페이지 로드 시 첫 번째 탭 자동 로드 */
     loadCategory('all', 1);
+
 </script>
 
 </body>

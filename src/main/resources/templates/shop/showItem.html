@@ -174,7 +174,9 @@
                                         <p class="product-card__price"
                                            th:text="${result.itemPrice != null ? '₩' + #numbers.formatInteger(result.itemPrice, 0, 'COMMA') : '가격 없음'}"></p>
                                         <p class="product-card__similarity"
-                                           th:text="${result.hammingDistance != null ? '유사도: ' + result.hammingDistance : ''}"></p>
+                                           th:if="${result.hammingDistance != null}"
+                                           th:text="|유사도: ${#numbers.formatDecimal(result.hammingDistance, 1, 8)}|">
+                                        </p>
                                     </div>
                                 </div>
                             </a>
@@ -196,7 +198,8 @@
             <div class="pdp-desc-body">
                 <p th:text="${item.itemContent}">상품 설명이 없습니다.</p>
 
-                <div class="pdp-desc-gallery" th:if="${item.imageUrlList != null and not #lists.isEmpty(item.imageUrlList)}">
+                <div class="pdp-desc-gallery"
+                     th:if="${item.imageUrlList != null and not #lists.isEmpty(item.imageUrlList)}">
                     <div class="pdp-desc-gallery-item" th:each="imgUrl : ${item.imageUrlList}">
                         <img th:src="${imgUrl}" th:alt="${item.itemTitle}" loading="lazy">
                     </div>

@@ -11,7 +11,7 @@
         border-radius: 12px;
         background: #f8f9fa; /* 배경색 살짝 추가 */
         border: 1px solid #e9ecef;
-        box-shadow: inset 0 2px 8px rgba(0,0,0,0.05);
+        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
         position: relative;
     }
 
@@ -19,13 +19,16 @@
     .searched-image-canvas-wrap::-webkit-scrollbar {
         width: 6px;
     }
+
     .searched-image-canvas-wrap::-webkit-scrollbar-track {
         background: transparent;
     }
+
     .searched-image-canvas-wrap::-webkit-scrollbar-thumb {
         background: #ced4da;
         border-radius: 10px;
     }
+
     .searched-image-canvas-wrap::-webkit-scrollbar-thumb:hover {
         background: #adb5bd;
     }
@@ -42,7 +45,52 @@
 <body>
 <!-- Navbar -->
 <div th:insert="~{fragments/bodyHeader :: bodyHeader}"></div>
-<div th:insert="~{fragments/searchBar :: searchBar}"></div>
+<div th:insert="~{fragments/searchTestTab :: searchTestTab}"></div>
+<!-- 모달 트리거 버튼 (원하는 위치에) -->
+
+<button data-bs-toggle="modal" data-bs-target="#imgSearchModal">
+    이미지로 검색
+</button>
+
+<section class="section-wrap" th:if="${items != null}">
+    <div class="container">
+
+        <h2 class="section-title">오늘의 추천 상품</h2>
+        <p class="section-subtitle">이미지 검색으로 원하는 상품을 추천 받으세요</p>
+
+        <div class="scroll-container-wrap">
+            <button class="scroll-btn scroll-btn-left" id="recommendScrollLeft">
+                <i class="fa fa-chevron-left"></i>
+            </button>
+
+
+            <div class="scroll-container" id="recommendScroll">
+                <div class="scroll-card" th:each="item : ${items}">
+                    <a th:href="@{/shop/detail/{id}(id=${item.itemId})}">
+                        <div class="product-card">
+                            <div class="product-card__img-wrap" th:if="${item.imageUrl != null}">
+                                <img th:src="${item.imageUrl}" th:alt="${item.itemTitle}" loading="lazy">
+                            </div>
+                            <div class="product-card__no-img" th:if="${item.imageUrl == null}">
+                                <i class="fa fa-image fa-2x"></i>
+                            </div>
+                            <div class="product-card__body">
+                                <p class="product-card__title" th:text="${item.itemTitle}"></p>
+                                <p class="product-card__price"
+                                   th:text="'₩' + ${#numbers.formatInteger(item.itemPrice, 0, 'COMMA')}"></p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <button class="scroll-btn scroll-btn-right" id="recommendScrollRight">
+                <i class="fa fa-chevron-right"></i>
+            </button>
+        </div>
+
+    </div>
+</section>
+
 <div class="container">
 
     <!-- 감지 데이터 (JS에서 사용) -->
@@ -69,6 +117,9 @@
             <div class="searched-image-canvas-wrap">
                 <canvas id="searchCanvas" class="searched-image"></canvas>
             </div>
+
+
+            <button>테스트</button>
         </aside>
 
         <!-- 오른쪽: 검색 결과 -->
@@ -91,8 +142,12 @@
                                    th:text="${result.itemTitle != null ? result.itemTitle : '상품 제목 없음'}"></p>
                                 <p class="product-card__price"
                                    th:text="${result.itemPrice != null ? '₩' + result.itemPrice : '가격 없음'}"></p>
+
                                 <p class="product-card__similarity"
-                                   th:text="${result.hammingDistance != null ? '유사도: ' + result.hammingDistance : ''}"></p>
+                                   th:if="${result.hammingDistance != null}"
+                                   th:text="|유사도: ${#numbers.formatDecimal(result.hammingDistance, 1, 8)}|">
+                                </p>
+
                             </div>
                         </div>
                     </a>
@@ -253,16 +308,16 @@
 
         /* ── 크롭으로 재검색 (비동기 Fetch API) ── */
         function searchWithCrop(cropCanvas, className) {
+            console.log("searchWithCrop")
             cropCanvas.toBlob(function (blob) {
                 var file = new File([blob], 'crop.png', {type: 'image/png'});
 
-                var form = document.querySelector('.search-form');
+                var form = document.querySelector('.search-card-form');
                 if (!form) return;
 
                 // CSRF 토큰 등 폼에 있는 데이터 그대로 사용
                 var formData = new FormData(form);
                 formData.set('imgFile', file);
-                formData.set('query', className);
 
                 // 위에 검색창 값도 변경
                 var searchInput = document.getElementById('searchInput');
@@ -281,22 +336,22 @@
                     method: 'POST',
                     body: formData
                 })
-                .then(response => response.json())
-                .then(data => {
-                    // 받아온 JSON 상품 리스트(`data`)로 화면 갱신
-                    renderSearchResults(data);
-                })
-                .catch(error => {
-                    console.error('검색 중 오류가 발생했습니다:', error);
-                    alert('검색 중 오류가 발생했습니다.');
-                })
-                .finally(() => {
-                    // 데이터 로딩이 끝나면 투명도 원상복구
-                    if (resultPanel) {
-                        resultPanel.style.opacity = '1';
-                        resultPanel.style.pointerEvents = 'auto';
-                    }
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        // 받아온 JSON 상품 리스트(`data`)로 화면 갱신
+                        renderSearchResults(data);
+                    })
+                    .catch(error => {
+                        console.error('검색 중 오류가 발생했습니다:', error);
+                        alert('검색 중 오류가 발생했습니다.');
+                    })
+                    .finally(() => {
+                        // 데이터 로딩이 끝나면 투명도 원상복구
+                        if (resultPanel) {
+                            resultPanel.style.opacity = '1';
+                            resultPanel.style.pointerEvents = 'auto';
+                        }
+                    });
             }, 'image/png');
         }
 
@@ -314,7 +369,7 @@
             }
 
             // 루프를 돌며 카드 하나씩 생성
-            results.forEach(function(item) {
+            results.forEach(function (item) {
                 var cardHtml = `
                     <div class="col-6 col-md-4">
                         <a href="/shop/detail/${item.itemId}">
@@ -327,7 +382,7 @@
                                 <div class="product-card__body">
                                     <p class="product-card__title">${item.itemTitle || '상품 제목 없음'}</p>
                                     <p class="product-card__price">${item.itemPrice ? '₩' + item.itemPrice : '가격 없음'}</p>
-                                    <p class="product-card__similarity">${item.hammingDistance ? '유사도: ' + item.hammingDistance : ''}</p>
+                                    <p class="product-card__similarity">${item.hammingDistance != null ? '유사도: ' + Number(item.hammingDistance).toFixed(8) : ''}</p>
                                 </div>
                             </div>
                         </a>
@@ -335,9 +390,9 @@
                 `;
                 container.insertAdjacentHTML('beforeend', cardHtml);
             });
-            
+
             // 상단으로 스크롤 부드럽게 이동 (선택 사항)
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({top: 0, behavior: 'smooth'});
         }
     })();
 </script>

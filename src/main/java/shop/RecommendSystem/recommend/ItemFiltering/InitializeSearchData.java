@@ -33,13 +33,16 @@ public class InitializeSearchData {
         HashOperations<String, String, Object> hashOps = redisTemplate.opsForHash();
 
         ArrayList<PreFilterDto> bitwiseANDFilteringList = (ArrayList<PreFilterDto>) hashOps.get("bitwiseANDFiltering", "searchData");
+        bitwiseANDFilteringList = bitwiseAndFiltering.initializeSearchData();
+        hashOps.put("bitwiseANDFiltering", "searchData", bitwiseANDFilteringList);
 
-        if(bitwiseANDFilteringList == null || bitwiseANDFilteringList.isEmpty()) {
-            bitwiseANDFilteringList= bitwiseAndFiltering.initializeSearchData();
-            hashOps.put("bitwiseANDFiltering", "searchData", bitwiseANDFilteringList);
-
-            log.info("=== BitwiseAndFiltering list redis 적재 ===");
-        }
+        log.info("=== BitwiseAndFiltering list redis 적재 ===");
+//        if(bitwiseANDFilteringList == null || bitwiseANDFilteringList.isEmpty()) {
+//            bitwiseANDFilteringList= bitwiseAndFiltering.initializeSearchData();
+//            hashOps.put("bitwiseANDFiltering", "searchData", bitwiseANDFilteringList);
+//
+//            log.info("=== BitwiseAndFiltering list redis 적재 ===");
+//        }
         log.info("=== BitwiseAndFiltering list initialized ===");
 
 //        HashMap<String, HashSet<ImageInfo>> prefixFilteringHash = (HashMap<String, HashSet<ImageInfo>>) hashOps.get("prefixFiltering", "searchData");
