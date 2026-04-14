@@ -39,12 +39,12 @@
 | 구분 | 버전 |
 | --- | --- |
 | Framework | SpringBoot
-FastAPI |
-| DBMS | MySQL |
+||FastAPI |
+| DBMS | ORACLE |
 | 데이터 접근 기술 | Mybatis
-JPA |
-| Infra | AWS S3
-Redis |
+||JPA |
+| Infra | OCI|
+||Redis |
 
 <br>
 
