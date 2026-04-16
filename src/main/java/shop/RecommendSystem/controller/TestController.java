@@ -13,9 +13,10 @@ import shop.RecommendSystem.shoppingMall.UploadService;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.Base64;
 
 /*
 3/30
@@ -338,7 +339,8 @@ public class TestController {
         File csvDir = new File(csvDirPath);
 
         File[] featureFiles = csvDir.listFiles((dir, name) ->
-                name.startsWith("features_") && name.endsWith(".csv"));
+                //name.startsWith("features_") && name.endsWith(".csv"));
+                name.startsWith("efficientNet_") && name.endsWith(".csv"));
 
         if (featureFiles == null || featureFiles.length == 0) {
             log.error("features_*.csv 파일이 없습니다: {}", csvDirPath);

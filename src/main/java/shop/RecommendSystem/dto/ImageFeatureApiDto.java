@@ -8,7 +8,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class VGG16ApiDto {
+public class ImageFeatureApiDto {
 
     private String order;           // fillter index 순서
     private String featuresBase64;  // 추출한 이미지 특징점을 base64로 인코딩한 것
@@ -18,14 +18,14 @@ public class VGG16ApiDto {
     private String confidence;      // confidence가 가장 높은 객체의 confidence 값
     private List<DetectionDto> detections; // 감지된 다른 객체들의 좌표값
 
-    public VGG16ApiDto() {}
+    public ImageFeatureApiDto() {}
 
-    public VGG16ApiDto(String order, String featuresBase64) {
+    public ImageFeatureApiDto(String order, String featuresBase64) {
         this.order = order;
         this.setFeaturesBase64(featuresBase64);
     }
 
-    public VGG16ApiDto(String order, String featuresBase64, String[] coordinate, String detectedClass, String confidence, List<DetectionDto> detections) {
+    public ImageFeatureApiDto(String order, String featuresBase64, String[] coordinate, String detectedClass, String confidence, List<DetectionDto> detections) {
         this.order = order;
         this.setFeaturesBase64(featuresBase64);
         this.coordinate = coordinate;

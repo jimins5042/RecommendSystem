@@ -42,7 +42,7 @@ public class ShopController {
 
         List<Item> items = shopRepository.selectAll(offset, size); // 데이터 조회
 
-        Page pageDto = shopService.calPage(page);
+        Page pageDto = shopService.calPage(page, size,"all");
 
         // 모델에 데이터 추가
         model.addAttribute("items", items);
@@ -57,7 +57,7 @@ public class ShopController {
             Model model) {
         try {
 
-            Map result = shopService.findThumbnailAll(null, page);
+            Map result = shopService.findThumbnailAll("all", page);
 
             List<Item> items = (List<Item>) result.get("items"); // 데이터 조회
             Page pageDto = (Page) result.get("pageDto"); // 데이터 조회
@@ -85,7 +85,6 @@ public class ShopController {
         // 모델에 데이터 추가
         model.addAttribute("items", items);
         model.addAttribute("pageDto", pageDto);
-
 
         return "shop/itemMain";
     }

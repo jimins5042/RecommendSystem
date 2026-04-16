@@ -120,9 +120,14 @@
       ) WHERE rn &gt; #{offset} * #{size}
     </select>
 
-    <select id="countItems" resultType="long">
-        SELECT COUNT(*)
+    <select id="countItems" resultType="long" parameterType="Map">
+        SELECT
+            COUNT(1)
         FROM shop_board
+        WHERE 1=1
+        <if test="category != null and category != 'all'">
+            AND CATEGORY = #{category}
+        </if>
     </select>
 
     <delete id="delete" parameterType="Long">

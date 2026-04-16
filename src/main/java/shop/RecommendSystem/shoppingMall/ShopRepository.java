@@ -7,15 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import shop.RecommendSystem.dto.Item;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
-import shop.RecommendSystem.recommend.ImageProcessing;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 
 @Repository
@@ -27,8 +22,6 @@ public class ShopRepository {
 
     //mapper의 의존관계 구현체를 주입
     private final ItemMapper itemMapper;
-    private final ImageProcessing imgCtrl;
-
 
     public long save(Item item) {
         log.info("매퍼={}", item.getItemTitle());
@@ -51,14 +44,6 @@ public class ShopRepository {
             List<String> imgaeList = itemList.stream().map(Item::getImageUrl).toList();
             item.setImageUrlList(imgaeList);
         }
-
-//        if(item.getImageUrl() != null) {
-//            try {
-//                item.setImageUrl(imgCtrl.cropAndResizeImage(item.getImageUrl(), 600, 600, 0));
-//            } catch (Exception e) {
-//                throw new RuntimeException(e);
-//            }
-//        }
 
         return item;
     }
@@ -94,8 +79,8 @@ public class ShopRepository {
         return items;
     }
 
-    public Long countItems() {
-        return itemMapper.countItems();
+    public Long countItems(String category) {
+        return itemMapper.countItems(Map.of("category", category));
     }
 
     public void deleteItem(Long id) {

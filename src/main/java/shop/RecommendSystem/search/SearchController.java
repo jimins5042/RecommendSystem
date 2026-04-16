@@ -10,9 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import shop.RecommendSystem.dto.DetectionDto;
 import shop.RecommendSystem.dto.SearchResult;
-import shop.RecommendSystem.dto.VGG16ApiDto;
-import shop.RecommendSystem.recommend.ImageFeature.VGG16;
-import shop.RecommendSystem.recommend.ImageProcessing;
+import shop.RecommendSystem.dto.ImageFeatureApiDto;
+import shop.RecommendSystem.recommend.ImageFeature.ImageFeature;
 
 import java.util.*;
 
@@ -21,9 +20,8 @@ import java.util.*;
 @Slf4j
 public class SearchController {
 
-    private final ImageProcessing imgCtrl;
     private final SearchService searchService;
-    private final VGG16 vgg16;
+    private final ImageFeature imageFeature;
 
     @GetMapping("/search/findImg")
     public String findImg(Model model) {
@@ -37,7 +35,7 @@ public class SearchController {
             @RequestParam("imgFile") MultipartFile file, Model model) throws Exception {
 
         // VGG16 API 호출 (특징점 + 객체 감지)
-        VGG16ApiDto apiResult = vgg16.sendImageToFastAPI(file);
+        ImageFeatureApiDto apiResult = imageFeature.sendImageToFastAPI(file, "efficientnet");
 
         // 특징점으로 유사 상품 검색
         List<SearchResult> results = searchService.searchSimilarItems(apiResult.getOrder(), apiResult.getFeatures(), 10, null);
@@ -72,20 +70,18 @@ public class SearchController {
 
     @PostMapping("/search/img/crop")
     @ResponseBody
-    public List<SearchResult> crop(
-            @RequestParam("imgFile") MultipartFile file) throws Exception {
-        
+    public List<SearchResult> crop(@RequestParam("imgFile") MultipartFile file) throws Exception {
         // 크롭 이미지 전용 검색 (JSON 리스트 반환)
-        VGG16ApiDto apiResult = vgg16.sendCropImageToFastAPI(file);
+        ImageFeatureApiDto apiResult = imageFeature.sendCropImageToFastAPI(file, "efficientnet");
         return searchService.searchSimilarItems(apiResult.getOrder(), apiResult.getFeatures(), 10, null);
     }
 
     // 반복되는 맵 생성 로직 분리
     private Map<String, Object> createDetectionMap(String className, Object confidence, String[] coordinate) {
         return Map.of(
-            "className", className,
-            "confidence", confidence,
-            "coordinate", coordinate
+                "className", className,
+                "confidence", confidence,
+                "coordinate", coordinate
         );
     }
 }

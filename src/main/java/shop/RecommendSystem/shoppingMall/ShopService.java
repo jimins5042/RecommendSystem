@@ -22,7 +22,7 @@ public class ShopService {
     private final ShopRepository shopRepository;
     private final UploadService uploadService;
 
-    public Map findThumbnailAll(String category, Long page){
+    public Map findThumbnailAll(String category, Long page) {
 
         return findThumbnailAll(category, page, 8L);
 
@@ -34,15 +34,16 @@ public class ShopService {
         // 페이지 번호와 크기 검증
         page = (page < 1) ? 1 : page;
 
-        if(size == null || size <= 0){
+        if (size == null || size <= 0) {
             size = 8L;  // 페이지당 아이템 수
         }
 
-        Long offset = (page - 1) * size; // 페이지 번호를 0부터 시작하도록 조정
+        //Long offset = (page - 1) * size; // 페이지 번호를 0부터 시작하도록 조정
+        Long offset = page - 1; // 페이지 번호를 0부터 시작하도록 조정
         try {
 
             List<Item> items = shopRepository.findThumbnailAll(offset, size, category); // 데이터 조회
-            Page pageDto = calPage(page);
+            Page pageDto = calPage(page, size, category);
 
             return Map.of(
                     "items", items,
@@ -80,11 +81,10 @@ public class ShopService {
         return itemId;
     }
 
-    public Page calPage(Long page) {
+    public Page calPage(Long page, Long size, String category) {
         page = (page < 1) ? 1 : page;
-        Long size = 10L;  // 페이지당 아이템 수
 
-        Long totalItems = shopRepository.countItems(); // 총 아이템 수 (DB에서 조회)
+        Long totalItems = shopRepository.countItems(category); // 총 아이템 수 (DB에서 조회)
         Long totalPages = (totalItems + size - 1) / size; // 총 페이지 수 계산
         Long pageGroup = (page - 1) / 10L + 1; // 현재 페이지 그룹 계산 (페이지당 최대 10개 페이지 번호 표시)
 
@@ -93,6 +93,7 @@ public class ShopService {
         Long endPage = Math.min(pageGroup * 10, totalPages);
 
         Page pageDto = new Page(page, totalPages, startPage, endPage);
+        log.info("pageDto : page={}, totalPages={}, startPage={}, endPage={}", page, totalPages, startPage, endPage);
 
         return pageDto;
     }

@@ -8,13 +8,13 @@ import org.springframework.web.multipart.MultipartFile;
 import shop.RecommendSystem.dto.ImageFeatureApiDto;
 
 @FeignClient(
-        name = "Vgg16FileServerSend",
+        name = "EfficientnetFileServerSend",
         url = "${fastApiUrl}"
 )
-public interface VGG16ApiInterface {
-    @PostMapping(value = "/api/vgg16/process-image/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public interface EfficientnetApiInterface {
+    @PostMapping(value = "/api/efficientnet/process-image/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     ImageFeatureApiDto sendFile(@RequestPart("file") MultipartFile file);
 
-    @PostMapping(value = "/api/vgg16/process-image/crop/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/api/efficientnet/process-image/crop/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     ImageFeatureApiDto sendCropFile(@RequestPart("file") MultipartFile file);
 }

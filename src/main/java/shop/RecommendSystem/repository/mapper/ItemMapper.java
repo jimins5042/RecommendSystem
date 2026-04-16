@@ -31,7 +31,7 @@ public interface ItemMapper {
     List<Item> findThumbnailAll(Map<String, Object> map);
 
     //글 목록수 반환
-    Long countItems();
+    Long countItems(Map map);
 
     // 글 삭제
     void delete(Long id);

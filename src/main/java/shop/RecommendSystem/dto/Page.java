@@ -13,11 +13,12 @@ public class Page {
     private Long totalPages;
     private Long startPage;
     private Long endPage;
+    private Long firstPage;
+    private Long finalPage;
     private String moveUrl;
 
     public Page() {
     }
-
 
     public Page(Long pageNo, Long totalPages, Long startPage, Long endPage) {
         this.pageNo = pageNo;
