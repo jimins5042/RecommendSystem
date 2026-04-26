@@ -376,6 +376,18 @@ public class TestController {
                     byte[] featureValue = Base64.getDecoder().decode(fields[1]);
                     String featureOrder = fields[2];
 
+                    //=========
+//                    featureOrder = featureOrder.replace("[", "").replace("]", "");
+//
+//                    String[] featureOrderArray = featureOrder.split("\\s*,\\s*");
+//// 쉼표 기준 + 앞뒤 공백 제거
+//
+//                    featureOrderArray = Arrays.copyOf(featureOrderArray, 25);
+//
+//                    featureOrder = Arrays.toString(featureOrderArray);
+
+                    //=========
+
                     batch.add(ImageInfo.builder()
                             .imageUuid(image_uuid) // 현재 1열에 저장된 uuid 값 사용
                             .imgFeatureValue(featureValue)

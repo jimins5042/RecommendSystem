@@ -29,7 +29,7 @@ public class InitializeSearchData {
 
         ArrayList<PreFilterDto> bitwiseANDFilteringList = (ArrayList<PreFilterDto>) hashOps.get("bitwiseANDFiltering", "searchData");
 
-
+//        if(true) {
         if(bitwiseANDFilteringList == null || bitwiseANDFilteringList.isEmpty()) {
             bitwiseANDFilteringList= bitwiseAndFiltering.initializeSearchData();
             hashOps.put("bitwiseANDFiltering", "searchData", bitwiseANDFilteringList);

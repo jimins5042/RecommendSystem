@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.GetMapping;
 import shop.RecommendSystem.dto.PreFilterDto;
 import shop.RecommendSystem.dto.SearchResult;
 import shop.RecommendSystem.repository.mapper.SearchMapper;
@@ -40,8 +41,7 @@ public class BitwiseAndFiltering {
 
     // 추출한 25개의 레이어의 번호를 512비트 크기의 비트 벡터로 변환 후 저장
     public byte[] addSearchData(String list) throws JsonProcessingException {
-        //byte[] bitArray = new byte[64];
-        byte[] bitArray = new byte[40];
+        byte[] bitArray = new byte[64];
         ObjectMapper objectMapper = new ObjectMapper();
 
         int[] paletteArray = objectMapper.readValue(list, int[].class);
@@ -142,7 +142,8 @@ public class BitwiseAndFiltering {
 
         log.info("size = {}", reducedList.size());
         // 이미지 후보군의 수가 300개 이하거나, 더이상 탐색할 레이어 번호가 없다면 리스트를 반환
-        if (reducedList.size() <= 300 || num == 24) {
+//        if (reducedList.size() <= 300 || num == 24) {
+        if (reducedList.size() <= 350 || num == 24) {
             return reducedList;
         } else {
             // 아니라면 탐색 범위를 더 줄이기
@@ -152,7 +153,7 @@ public class BitwiseAndFiltering {
 
 
     //자카드 유사도 계산 공식
-    public static double jaccardSimilarity(byte[] A, byte[] B) {
+    public static double jaccardSimilarity1(byte[] A, byte[] B) {
         int intersection = 0;  // A ∩ B (교집합 크기)
         int union = 0;         // A ∪ B (합집합 크기)
 
@@ -166,7 +167,9 @@ public class BitwiseAndFiltering {
     }
 
     // 코사인 유사도 계산 공식
-    public static double cosineSimilarity(byte[] A, byte[] B) {
+
+    public static double jaccardSimilarity(byte[] A, byte[] B) {
+//    public static double cosineSimilarity(byte[] A, byte[] B) {
         int dotProduct = 0;
         int normA = 0;
         int normB = 0;

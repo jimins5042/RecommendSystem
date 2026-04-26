@@ -38,7 +38,7 @@ public class SearchController {
         ImageFeatureApiDto apiResult = imageFeature.sendImageToFastAPI(file, "efficientnet");
 
         // 특징점으로 유사 상품 검색
-        List<SearchResult> results = searchService.searchSimilarItems(apiResult.getOrder(), apiResult.getFeatures(), 10, null);
+        List<SearchResult> results = searchService.searchSimilarItems(apiResult.getOrder(), apiResult.getFeatures(), 20, null);
 
         // 검색 이미지 (base64)
         String base64Image = Base64.getEncoder().encodeToString(file.getBytes());
@@ -73,7 +73,7 @@ public class SearchController {
     public List<SearchResult> crop(@RequestParam("imgFile") MultipartFile file) throws Exception {
         // 크롭 이미지 전용 검색 (JSON 리스트 반환)
         ImageFeatureApiDto apiResult = imageFeature.sendCropImageToFastAPI(file, "efficientnet");
-        return searchService.searchSimilarItems(apiResult.getOrder(), apiResult.getFeatures(), 10, null);
+        return searchService.searchSimilarItems(apiResult.getOrder(), apiResult.getFeatures(), 20, null);
     }
 
     // 반복되는 맵 생성 로직 분리
