@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--ItemMapper의 위치를 적어줌-->
+<mapper namespace="shop.RecommendSystem.repository.mapper.SearchMapper_1">
+
+    <resultMap id="imageResultMap" type="ImageInfo">
+        <result column="IMG_FEATURE_VALUE" property="bitarray"/>
+    </resultMap>
+
+    <!--글 상세 보기-->
+    <select id="findSearchPHashTarget" resultType="ImageInfo">
+        SELECT image_uuid,
+               image_hash_code
+        FROM image_info_vggnet
+    </select>
+
+    <select id="findReduceTarget" resultType="PreFilterDto">
+        SELECT image_uuid,
+               img_feature_order as featureOrder
+        FROM image_info_vggnet
+    </select>
+
+
+<!--    <select id="findPreFilterTargetV2" parameterType="list" resultType="SearchResult">-->
+    <select id="findPreFilterTargetV2" parameterType="map" resultType="SearchResult">
+        SELECT
+            s.item_id, s.item_title, s.item_price,
+            i.image_url, i.image_uuid, i.img_feature_value as imgFeatureValue
+        FROM shop_board s
+        INNER JOIN image_info_vggnet i
+            ON s.item_id = i.item_id
+        WHERE 1=1
+
+        <if test="id != null">
+            AND i.item_id != #{id}
+        </if>
+
+        <if test="keySet != null and keySet.size() > 0">
+            AND i.image_uuid IN
+            <foreach collection="keySet" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="findPreFilterTarget" parameterType="list" resultType="PreFilterDto">
+        SELECT image_uuid, img_feature_value
+        FROM image_info_vggnet
+        WHERE image_uuid IN (
+        <foreach collection="list" item="item" separator=", ">
+            #{item}
+        </foreach>
+        )
+    </select>
+
+    <select id="findLshTarget" resultType="PreFilterDto">
+        SELECT image_uuid,
+               img_feature_value
+        FROM image_info_vggnet
+    </select>
+
+    <!-- SELECT 쿼리 -->
+
+    <select id="findItemCandidates" parameterType="list" resultType="SearchResult">
+        SELECT
+        s.item_id, s.item_title, s.item_price, i.image_url, i.image_uuid
+        FROM
+        shop_board s
+        INNER JOIN
+        image_info_vggnet i
+        ON
+        s.item_id = i.item_id
+        WHERE i.image_uuid IN (
+        <foreach collection="list" item="item" separator=", ">
+            #{item}
+        </foreach>
+        )
+    </select>
+
+
+    <select id="findItemCandidatesV1" parameterType="list" resultType="SearchResult">
+        SELECT
+        s.item_id, s.item_title, s.item_price, i.image_url, i.image_uuid
+        FROM
+        shop_board s
+        LEFT JOIN
+        image_info_vggnet i
+        ON
+        s.item_id = i.item_id
+        WHERE
+        i.image_uuid IN(
+        SELECT image_uuid FROM (
+        <foreach collection="list" item="item" separator=" UNION ALL ">
+            SELECT #{item} AS image_uuid
+        </foreach>
+        ) temp_table
+        )
+
+    </select>
+
+    <update id="updatePHash" parameterType="Map">
+
+        UPDATE image_info_vggnet
+        set img_feature_value = #{hash}
+        where image_original_name = #{uuid}
+
+    </update>
+
+    <update id="updateImageInfo" parameterType="ImageInfo">
+
+        UPDATE image_info_vggnet
+
+        <set>
+            <if test="imageHashCode != null">
+                IMAGE_HASH_CODE = #{imageHashCode},
+            </if>
+            <if test="imgFeatureValue != null">
+                IMG_FEATURE_VALUE = #{imgFeatureValue,jdbcType=BLOB},
+            </if>
+            <if test="imgFeatureOrder != null">
+                IMG_FEATURE_ORDER = #{imgFeatureOrder},
+            </if>
+
+        </set>
+        where image_uuid = #{imageUuid}
+
+    </update>
+
+
+
+    <select id="findSearchUpdateTarget" resultType="ImageInfo">
+        SELECT image_uuid,
+               image_original_name,
+               image_url,
+               img_feature_value as image_hash_code
+        FROM image_info_vggnet
+    </select>
+
+
+    <select id="speedTest" resultType="PreFilterDto">
+        SELECT * FROM
+        (SELECT image_uuid,
+        img_feature_order as featureOrder,
+        img_feature_value as imgFeatureValue
+        FROM image_info_vggnet
+        order by image_id desc)
+        WHERE ROWNUM &lt; 20
+    </select>
+
+</mapper>
