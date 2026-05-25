@@ -21,11 +21,15 @@ public class Item {
     private String category;
     private List<String> imageUrlList;
     private String imageUrl;
-    private String hashCode;
-    private byte[] bitArray;
+
+    private byte[] pqCode;
+    private byte[] embeddingValue;
+    private String detectedClass;
+
     public Item() {
 
     }
+
 }
 
 

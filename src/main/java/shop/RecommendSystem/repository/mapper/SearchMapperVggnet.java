@@ -1,6 +1,5 @@
 package shop.RecommendSystem.repository.mapper;
 
-import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import shop.RecommendSystem.dto.ImageInfo;
@@ -13,11 +12,13 @@ import java.util.List;
 import java.util.Map;
 
 @Mapper
-public interface SearchMapper {
+public interface SearchMapperVggnet {
 
-    // ── ResNet-50 + PQ ──
-    List<PqEntry> findAllPqCodes();
+    ArrayList<PreFilterDto> findReduceTarget();
 
-    List<SearchResult> findResnet50Phase2Targets(@Param("keySet") List<String> keySet, @Param("id") Long id);
+    ArrayList<PreFilterDto> findPreFilterTarget(List<String> keySet);
+
+    List<SearchResult> findPreFilterTargetV2(@Param("keySet") List<String> keySet, @Param("id")Long id);
+
 
 }

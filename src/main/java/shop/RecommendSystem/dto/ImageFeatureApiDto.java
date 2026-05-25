@@ -18,6 +18,12 @@ public class ImageFeatureApiDto {
     private String confidence;      // confidence가 가장 높은 객체의 confidence 값
     private List<DetectionDto> detections; // 감지된 다른 객체들의 좌표값
 
+    // ── ResNet-50 + PQ 응답 필드 ──
+    private String embeddingBase64;  // fp16 × 2048 (Phase 2 코사인 재랭킹용)
+    private byte[] embedding;        // 위 base64 디코딩 결과
+    private String pqCodeBase64;     // raw 64 byte (현재 사용 안 함, 디버깅용)
+    private byte[] pqCode;
+
     public ImageFeatureApiDto() {}
 
     public ImageFeatureApiDto(String order, String featuresBase64) {
@@ -39,6 +45,20 @@ public class ImageFeatureApiDto {
         this.featuresBase64 = featuresBase64;
         if (featuresBase64 != null) {
             this.features = Base64.getDecoder().decode(featuresBase64);
+        }
+    }
+
+    public void setEmbeddingBase64(String embeddingBase64) {
+        this.embeddingBase64 = embeddingBase64;
+        if (embeddingBase64 != null) {
+            this.embedding = Base64.getDecoder().decode(embeddingBase64);
+        }
+    }
+
+    public void setPqCodeBase64(String pqCodeBase64) {
+        this.pqCodeBase64 = pqCodeBase64;
+        if (pqCodeBase64 != null) {
+            this.pqCode = Base64.getDecoder().decode(pqCodeBase64);
         }
     }
 }

@@ -15,6 +15,10 @@ public class SearchResult {
     private Double hammingDistance;
     private byte[] imgFeatureValue;
 
+    // ── ResNet-50 + PQ Phase 2 용 ──
+    private byte[] embeddingValue;       // fp16 × 2048 = 4,096 byte (DB 로드용)
+    private Double cosineSimilarity;     // Phase 2 정밀 재랭킹 점수
+
     public SearchResult() {
     }
 

@@ -4,148 +4,39 @@
 <!--ItemMapper의 위치를 적어줌-->
 <mapper namespace="shop.RecommendSystem.repository.mapper.SearchMapper">
 
-    <resultMap id="imageResultMap" type="ImageInfo">
-        <result column="IMG_FEATURE_VALUE" property="bitarray"/>
-    </resultMap>
 
-    <!--글 상세 보기-->
-    <select id="findSearchPHashTarget" resultType="ImageInfo">
-        SELECT image_uuid,
-               image_hash_code
+    <!-- ════════════════════════════════════
+         ResNet-50 + PQ 검색용
+         ════════════════════════════════════ -->
+
+    <!-- 메모리 PQ 인덱스 적재용 (@PostConstruct 에서 1회 호출) -->
+    <select id="findAllPqCodes" resultType="PqEntry">
+        SELECT image_uuid      AS imageUuid,
+               pq_code         AS pqCode,
+               detected_class  AS detectedClass
         FROM image_info
+        WHERE pq_code IS NOT NULL
     </select>
 
-    <select id="findReduceTarget" resultType="PreFilterDto">
-        SELECT image_uuid,
-               img_feature_order as featureOrder
-        FROM image_info
-    </select>
-
-
-<!--    <select id="findPreFilterTargetV2" parameterType="list" resultType="SearchResult">-->
-    <select id="findPreFilterTargetV2" parameterType="map" resultType="SearchResult">
+    <!-- Phase 2 재랭킹용 — Top-350 uuid 의 fp16 임베딩 + 상품 정보 JOIN -->
+    <select id="findResnet50Phase2Targets" parameterType="map" resultType="SearchResult">
         SELECT
             s.item_id, s.item_title, s.item_price,
-            i.image_url, i.image_uuid, i.img_feature_value as imgFeatureValue
+            i.image_url, i.image_uuid,
+            i.embedding_value AS embeddingValue
         FROM shop_board s
         INNER JOIN image_info i
             ON s.item_id = i.item_id
         WHERE 1=1
-
         <if test="id != null">
             AND i.item_id != #{id}
         </if>
-
         <if test="keySet != null and keySet.size() > 0">
             AND i.image_uuid IN
             <foreach collection="keySet" item="item" open="(" close=")" separator=",">
                 #{item}
             </foreach>
         </if>
-    </select>
-
-    <select id="findPreFilterTarget" parameterType="list" resultType="PreFilterDto">
-        SELECT image_uuid, img_feature_value
-        FROM image_info
-        WHERE image_uuid IN (
-        <foreach collection="list" item="item" separator=", ">
-            #{item}
-        </foreach>
-        )
-    </select>
-
-    <select id="findLshTarget" resultType="PreFilterDto">
-        SELECT image_uuid,
-               img_feature_value
-        FROM image_info
-    </select>
-
-    <!-- SELECT 쿼리 -->
-
-    <select id="findItemCandidates" parameterType="list" resultType="SearchResult">
-        SELECT
-        s.item_id, s.item_title, s.item_price, i.image_url, i.image_uuid
-        FROM
-        shop_board s
-        INNER JOIN
-        image_info i
-        ON
-        s.item_id = i.item_id
-        WHERE i.image_uuid IN (
-        <foreach collection="list" item="item" separator=", ">
-            #{item}
-        </foreach>
-        )
-    </select>
-
-
-    <select id="findItemCandidatesV1" parameterType="list" resultType="SearchResult">
-        SELECT
-        s.item_id, s.item_title, s.item_price, i.image_url, i.image_uuid
-        FROM
-        shop_board s
-        LEFT JOIN
-        image_info i
-        ON
-        s.item_id = i.item_id
-        WHERE
-        i.image_uuid IN(
-        SELECT image_uuid FROM (
-        <foreach collection="list" item="item" separator=" UNION ALL ">
-            SELECT #{item} AS image_uuid
-        </foreach>
-        ) temp_table
-        )
-
-    </select>
-
-    <update id="updatePHash" parameterType="Map">
-
-        UPDATE image_info
-        set img_feature_value = #{hash}
-        where image_original_name = #{uuid}
-
-    </update>
-
-    <update id="updateImageInfo" parameterType="ImageInfo">
-
-        UPDATE image_info
-
-        <set>
-            <if test="imageHashCode != null">
-                IMAGE_HASH_CODE = #{imageHashCode},
-            </if>
-            <if test="imgFeatureValue != null">
-                IMG_FEATURE_VALUE = #{imgFeatureValue,jdbcType=BLOB},
-            </if>
-            <if test="imgFeatureOrder != null">
-                IMG_FEATURE_ORDER = #{imgFeatureOrder},
-            </if>
-
-        </set>
-        where image_uuid = #{imageUuid}
-
-    </update>
-
-
-
-    <select id="findSearchUpdateTarget" resultType="ImageInfo">
-        SELECT image_uuid,
-               image_original_name,
-               image_url,
-               img_feature_value as image_hash_code
-        FROM image_info
-    </select>
-
-
-    <select id="speedTest" resultType="PreFilterDto">
-        SELECT * FROM
-        (SELECT image_uuid,
-        img_feature_order as featureOrder,
-        img_feature_value as imgFeatureValue
-        FROM image_info
-        order by image_id desc)
-        WHERE ROWNUM &lt; 20
     </select>
 
 </mapper>

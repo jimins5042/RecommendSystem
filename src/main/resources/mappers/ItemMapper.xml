@@ -19,8 +19,8 @@
 
 
     <insert id="insertImageInfo" parameterType="shop.RecommendSystem.dto.ImageInfo">
-        INSERT INTO image_info (image_uuid, image_original_name, image_url, image_hash_code, item_id)
-        VALUES (#{imageUuid}, #{imageOriginalName}, #{imageUrl}, #{imageHashCode}, #{itemId})
+        INSERT INTO image_info (image_uuid, image_original_name, image_url, item_id, created_at)
+        VALUES (#{imageUuid}, #{imageOriginalName}, #{imageUrl}, #{itemId}, CURRENT_TIMESTAMP)
     </insert>
 
 
@@ -28,9 +28,9 @@
         INSERT ALL
         <foreach collection="list" item="image">
             INTO image_info
-            (image_uuid, image_original_name, image_url, image_hash_code, item_id)
+            (image_uuid, image_original_name, image_url, item_id, created_at)
             VALUES
-            (#{image.imageUuid}, #{image.imageOriginalName}, #{image.imageUrl}, #{image.imageHashCode}, #{image.itemId})
+            (#{image.imageUuid}, #{image.imageOriginalName}, #{image.imageUrl}, #{image.itemId}, CURRENT_TIMESTAMP)
         </foreach>
         SELECT 1 FROM dual
     </insert>
@@ -48,8 +48,9 @@
             s.item_price,
             s.category,
             i.image_url,
-            i.img_feature_order as hashCode,
-            i.img_feature_value as bitArray
+            i.PQ_CODE,
+            i.EMBEDDING_VALUE,
+            i.DETECTED_CLASS
 
         FROM shop_board s
         LEFT JOIN
@@ -61,30 +62,15 @@
         order by i.image_uuid
     </select>
 
-    <select id="findByIdToPhash" parameterType="Long" resultType="Item">
 
-        SELECT s.item_id,
-               s.item_title,
-               s.item_content,
-               s.created_at,
-               s.item_price,
-               i.image_url,
-               i.image_hash_code as hashCode
-        FROM shop_board s
-                 LEFT JOIN
-             image_info i
-             ON
-                 s.item_id = i.item_id
-        WHERE s.item_id = #{id}
-    </select>
     <!--글 목록 및 글 관리-->
     <select id="findAll" resultType="Item" parameterType="Map">
 
         SELECT * FROM (
-        SELECT T.*, ROWNUM AS rn FROM (
-        SELECT item_id,
-        item_title,
-        CREATED_AT
+            SELECT T.*, ROWNUM AS rn FROM (
+            SELECT item_id,
+            item_title,
+            CREATED_AT
         FROM shop_board
         ORDER BY item_id desc
         ) T WHERE ROWNUM &lt;= (#{offset}+1) * #{size}
@@ -194,6 +180,48 @@
     <!-- 스테이징 테이블 삭제 -->
     <update id="dropFeatureStaging">
         DROP TABLE image_feature_staging
+    </update>
+
+    <!-- ════════════════════════════════════
+         ResNet-50 + PQ 적재 (image_info 신규 컬럼용)
+         ════════════════════════════════════ -->
+
+    <update id="createResnet50Staging">
+        CREATE TABLE image_resnet50_staging (
+            image_uuid       VARCHAR2(500),
+            pq_code          BLOB,
+            embedding_value  BLOB,
+            detected_class   VARCHAR2(32)
+        )
+    </update>
+
+    <insert id="insertResnet50Staging">
+        INSERT ALL
+        <foreach collection="list" item="img">
+            INTO image_resnet50_staging
+            (image_uuid, pq_code, embedding_value, detected_class)
+            VALUES
+            (#{img.imageUuid},
+             #{img.pqCode,jdbcType=BLOB},
+             #{img.embeddingValue,jdbcType=BLOB},
+             #{img.detectedClass,jdbcType=VARCHAR})
+        </foreach>
+        SELECT 1 FROM dual
+    </insert>
+
+    <update id="mergeResnet50FromStaging">
+        MERGE INTO image_info t
+        USING image_resnet50_staging s
+        ON (t.image_uuid = s.image_uuid)
+        WHEN MATCHED THEN UPDATE SET
+            t.pq_code         = s.pq_code,
+            t.embedding_value = s.embedding_value,
+            t.detected_class  = s.detected_class,
+            t.updated_at      = CURRENT_TIMESTAMP
+    </update>
+
+    <update id="dropResnet50Staging">
+        DROP TABLE image_resnet50_staging
     </update>
 
 </mapper>

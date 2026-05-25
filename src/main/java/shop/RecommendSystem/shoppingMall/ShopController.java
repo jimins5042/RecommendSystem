@@ -42,7 +42,7 @@ public class ShopController {
 
         List<Item> items = shopRepository.selectAll(offset, size); // 데이터 조회
 
-        Page pageDto = shopService.calPage(page, size,"all");
+        Page pageDto = shopService.calPage(page, size, "all");
 
         // 모델에 데이터 추가
         model.addAttribute("items", items);
@@ -111,23 +111,26 @@ public class ShopController {
             Item item = shopRepository.findById(id);
 
             //추천 상품 조회
-            if (item.getHashCode() != null) {
-                List<SearchResult> results = searchService.searchSimilarItems(item.getHashCode(), item.getBitArray(), 8, id);
-                model.addAttribute("results", results);
-            }
-
-            //댓글 조회
-            ArrayList<Reply> replies = replyService.getReplies(id);
-
-            if (replies.size() > 0) {
-                for (Reply reply : replies) {
-                    log.info(reply.getReplyContent());
+            if (item.getEmbeddingValue() != null) {
+                //byte[] embeddingBytes, String classFilter, int resultSize, Long excludeItemId) {
+                List<SearchResult> results = searchService.searchByResnet50(item.getEmbeddingValue(), item.getDetectedClass(), 8, id);
+                {
+                    model.addAttribute("results", results);
                 }
-            }
 
-            model.addAttribute("postId", id);
-            model.addAttribute("item", item);
-            model.addAttribute("replies", replies);
+                //댓글 조회
+                ArrayList<Reply> replies = replyService.getReplies(id);
+
+                if (replies.size() > 0) {
+                    for (Reply reply : replies) {
+                        log.info(reply.getReplyContent());
+                    }
+                }
+
+                model.addAttribute("postId", id);
+                model.addAttribute("item", item);
+                model.addAttribute("replies", replies);
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -141,7 +144,8 @@ public class ShopController {
     }
 
     @PostMapping("/shop/addItemAction")
-    public String addItemAction(@ModelAttribute Item itemForm, @RequestParam("imgFile") MultipartFile[] files) throws IOException {
+    public String addItemAction(@ModelAttribute Item itemForm, @RequestParam("imgFile") MultipartFile[] files) throws
+            IOException {
 
         Long productId = shopService.insertItem(itemForm, files);
 

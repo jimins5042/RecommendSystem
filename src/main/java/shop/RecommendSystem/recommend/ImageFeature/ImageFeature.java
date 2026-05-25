@@ -12,8 +12,8 @@ import shop.RecommendSystem.dto.ImageFeatureApiDto;
 @RequiredArgsConstructor
 public class ImageFeature {
 
-    private final EfficientnetApiInterface efficientnetApiInterface;
     private final VGG16ApiInterface vgg16ApiInterface;
+    private final ResNet50ApiInterface resNet50ApiInterface;
 
     /**
      * - VGG16 모델을 이용해 이미지의 특징점을 추출한 후, 0을 제외한 특징점 값들의 평균을 기준으로 이진화한 binary 값을 생성
@@ -27,11 +27,11 @@ public class ImageFeature {
         ImageFeatureApiDto response = new ImageFeatureApiDto();
 
         if(model != null && !model.isEmpty()){
-            if("efficientnet".equals(model)){
-                response= efficientnetApiInterface.sendFile(file);
-            }
-            if("vgg16".equals(model)){
+            if("vggnet".equals(model)){
                 response= vgg16ApiInterface.sendFile(file);
+            }
+            if("resnet50".equals(model)){
+                response= resNet50ApiInterface.sendFile(file);
             }
         }
 
@@ -42,11 +42,12 @@ public class ImageFeature {
         ImageFeatureApiDto response = new ImageFeatureApiDto();
 
         if(model != null && !model.isEmpty()){
-            if("efficientnet".equals(model)){
-                response= efficientnetApiInterface.sendCropFile(file);
-            }
-            if("vgg16".equals(model)){
+
+            if("vggnet".equals(model)){
                 response= vgg16ApiInterface.sendCropFile(file);
+            }
+            if("resnet50".equals(model)){
+                response= resNet50ApiInterface.sendCropFile(file);
             }
         }
         return response;

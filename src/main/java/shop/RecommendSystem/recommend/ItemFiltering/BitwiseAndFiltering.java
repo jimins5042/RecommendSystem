@@ -7,10 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.GetMapping;
 import shop.RecommendSystem.dto.PreFilterDto;
 import shop.RecommendSystem.dto.SearchResult;
-import shop.RecommendSystem.repository.mapper.SearchMapper;
+import shop.RecommendSystem.repository.mapper.SearchMapperVggnet;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +21,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class BitwiseAndFiltering {
 
-    private final SearchMapper searchMapper;
+    private final SearchMapperVggnet searchMapper;
     private final RedisTemplate redisTemplate;
 
 
@@ -105,9 +104,10 @@ public class BitwiseAndFiltering {
         HashOperations<String, String, Object> hashOps = redisTemplate.opsForHash();
         ArrayList<PreFilterDto> bitwiseANDFilteringList = (ArrayList<PreFilterDto>) redisTemplate.opsForHash().get("bitwiseANDFiltering", "searchData");
 
-        if(bitwiseANDFilteringList == null || bitwiseANDFilteringList.isEmpty()) {
-            bitwiseANDFilteringList= initializeSearchData();
+        if (bitwiseANDFilteringList == null || bitwiseANDFilteringList.isEmpty()) {
+            bitwiseANDFilteringList = initializeSearchData();
             hashOps.put("bitwiseANDFiltering", "searchData", bitwiseANDFilteringList);
+            log.info("===  preprocessList에서 PreFilter list initialized ===");
         }
         return reduceScope(bitwiseANDFilteringList, layer, 0);
     }
@@ -153,7 +153,7 @@ public class BitwiseAndFiltering {
 
 
     //자카드 유사도 계산 공식
-    public static double jaccardSimilarity1(byte[] A, byte[] B) {
+    public static double jaccardSimilarity(byte[] A, byte[] B) {
         int intersection = 0;  // A ∩ B (교집합 크기)
         int union = 0;         // A ∪ B (합집합 크기)
 
@@ -168,8 +168,8 @@ public class BitwiseAndFiltering {
 
     // 코사인 유사도 계산 공식
 
-    public static double jaccardSimilarity(byte[] A, byte[] B) {
-//    public static double cosineSimilarity(byte[] A, byte[] B) {
+
+    public static double cosineSimilarity(byte[] A, byte[] B) {
         int dotProduct = 0;
         int normA = 0;
         int normB = 0;

@@ -23,6 +23,11 @@ public class ImageInfo {
     private Date createdAt;
     private Date updatedAt;
 
+    // ResNet-50 + PQ (신규)
+    private byte[] pqCode;          // raw 64 byte
+    private byte[] embeddingValue;  // fp16 × 2048 = 4,096 byte
+    private String detectedClass;   // YOLO 분류 (bag/shoes/clothing/sunglasses/food_drink)
+
     public ImageInfo() {
     }
 }

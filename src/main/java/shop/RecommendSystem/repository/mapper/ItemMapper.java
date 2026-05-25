@@ -52,4 +52,13 @@ public interface ItemMapper {
     // 스테이징 테이블 삭제
     void dropFeatureStaging();
 
+    // ── ResNet-50 + PQ 적재용 ──
+    void createResnet50Staging();
+
+    void insertResnet50Staging(List<ImageInfo> list);
+
+    void mergeResnet50FromStaging();
+
+    void dropResnet50Staging();
+
 }

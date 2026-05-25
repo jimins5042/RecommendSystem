@@ -23,6 +23,40 @@
                             <input type="file" name="imgFile" id="imgFile" class="d-none" accept="image/*">
                         </div>
 
+                        <!-- 백본 선택 (A/B 테스트용) -->
+                        <div class="mb-3 p-3 border rounded" style="background:#f8f9fa;">
+                            <label class="form-label fw-bold mb-2" style="font-size:0.9rem;">
+                                <i class="fa fa-microchip me-1"></i> 검색 엔진
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="backbone" id="modelResnet50"
+                                       value="resnet50"
+                                       th:checked="${currentBackbone == null or currentBackbone == 'resnet50'}">
+                                <label class="form-check-label" for="modelResnet50">
+                                    ResNet-50 + PQ <small class="text-muted"></small>
+                                </label>
+                            </div>
+                            <div class="d-flex gap-3 flex-wrap">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="backbone" id="modelVggnet"
+                                           value="vggnet" th:checked="${currentBackbone == 'vggnet'}">
+                                    <label class="form-check-label" for="modelVggnet">
+                                        VGGNet <small class="text-muted"></small>
+                                    </label>
+                                </div>
+
+                            </div>
+                            <!-- ResNet-50 전용 옵션 (현재 백본이 resnet50이면 초기 노출) -->
+                            <div class="form-check mt-2" id="resnet50Options"
+                                 th:style="${currentBackbone == null or currentBackbone == 'resnet50'} ? 'display:block;' : 'display:none;'">
+                                <input class="form-check-input" type="checkbox" name="useClassFilter"
+                                       id="useClassFilter" value="true">
+                                <label class="form-check-label" for="useClassFilter" style="font-size:0.85rem;">
+                                    YOLO 분류 사전 필터 사용 <small class="text-muted">(같은 카테고리만 검색)</small>
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="d-flex gap-3">
                             <button type="submit" class="btn-primary-custom">검색하기</button>
                             <button type="button" class="btn-secondary-custom" data-bs-dismiss="modal">취소</button>
@@ -68,6 +102,15 @@
                 preview.src = '';
                 icon.style.display = '';
                 label.style.display = '';
+            });
+
+            // 백본 선택 시 ResNet-50 전용 옵션 노출 토글
+            const resnet50Options = document.getElementById('resnet50Options');
+            document.querySelectorAll('input[name="backbone"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    const selected = document.querySelector('input[name="backbone"]:checked');
+                    resnet50Options.style.display = (selected && selected.value === 'resnet50') ? 'block' : 'none';
+                });
             });
         })();
     </script>
