@@ -16,16 +16,20 @@
     </select>
 
 
-    <select id="findPreFilterTargetV2" parameterType="map" resultType="SearchResult">
+    <select id="findPreFilterTarget" parameterType="map" resultType="SearchResult">
         SELECT
-            s.item_id, s.item_title, s.item_price,
-            i.image_url, i.image_uuid, i.img_feature_value as imgFeatureValue
+        s.item_id, s.item_title, s.item_price,
+        i.image_url, i.image_uuid, i.img_feature_value as imgFeatureValue
         FROM shop_board s
         INNER JOIN image_info_vggnet i
-            ON s.item_id = i.item_id
+        ON s.item_id = i.item_id
         WHERE 1=1
 
         <if test="id == null and keySet == null">
+            AND 1=0
+        </if>
+
+        <if test="keySet != null and keySet.size() == 0">
             AND 1=0
         </if>
 
@@ -39,16 +43,6 @@
                 #{item}
             </foreach>
         </if>
-    </select>
-
-    <select id="findPreFilterTarget" parameterType="list" resultType="PreFilterDto">
-        SELECT image_uuid, img_feature_value
-        FROM image_info_vggnet
-        WHERE image_uuid IN (
-        <foreach collection="list" item="item" separator=", ">
-            #{item}
-        </foreach>
-        )
     </select>
 
 </mapper>

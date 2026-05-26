@@ -30,6 +30,9 @@ public interface ItemMapper {
     //이미지가 있는 게시글 리스트 탐색
     List<Item> findThumbnailAll(Map<String, Object> map);
 
+    // 평가용: 카테고리별 랜덤 샘플 N개씩
+    List<Item> findRandomByCategory(@org.apache.ibatis.annotations.Param("perCategory") int perCategory);
+
     //글 목록수 반환
     Long countItems(Map map);
 

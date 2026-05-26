@@ -4,7 +4,9 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
+import shop.RecommendSystem.dto.ItemFilteringVo;
 import shop.RecommendSystem.dto.PqEntry;
 import shop.RecommendSystem.dto.SearchResult;
 import shop.RecommendSystem.repository.mapper.SearchMapper;
@@ -28,14 +30,15 @@ import java.util.stream.Collectors;
 
 /**
  * ResNet-50 + PQ 기반 1차 후보 축소 + Phase 2 코사인 재랭킹.
- *
+ * <p>
  * Phase 1: 메모리 PQ 인덱스 → 비대칭 거리(asymmetric distance) → Top-K 후보
  * Phase 2: DB 에서 후보들의 fp16 임베딩 로드 → 정밀 코사인 유사도 → 최종 정렬
  */
-@Component
+@Component("resnet")
+@Primary
 @RequiredArgsConstructor
 @Slf4j
-public class PQFiltering {
+public class PQFiltering implements ItemFiltering {
 
     private final SearchMapper searchMapper;
 
@@ -72,7 +75,7 @@ public class PQFiltering {
     /**
      * 외부(InitializeSearchData)에서 적재된 PQ 인덱스를 주입.
      * 호출 시점에 클래스별 파티션도 함께 빌드.
-     *
+     * <p>
      * Redis 캐시 hit/miss 양쪽 경로 모두 이 메서드를 거치므로
      * pqIndex/pqIndexByClass 의 setup 은 항상 일관됨.
      */
@@ -89,13 +92,22 @@ public class PQFiltering {
     }
 
     /**
-     * @param queryEmbedding 질의 임베딩 (float[2048])
-     * @param classFilter    null 이면 전체 검색, 아니면 해당 detected_class 만
+     *  queryEmbedding 질의 임베딩 (float[2048])
+     *  classFilter    null 이면 전체 검색, 아니면 해당 detected_class 만
      * @param resultSize     최종 반환 개수
-     * @param excludeItemId  본인 상품 제외 (null 허용)
+     * @param id             본인 상품 제외 (null 허용)
      */
-    public List<SearchResult> searchSimilarItem(
-            float[] queryEmbedding, String classFilter, int resultSize, Long excludeItemId) {
+
+
+//    @Override
+//    public List<SearchResult> searchSimilarItems(Map searchCondition, int resultSize, Long id) {
+//        return List.of();
+//    }
+    @Override
+    public List<SearchResult> searchSimilarItem(ItemFilteringVo searchParam, int resultSize, Long id) {
+
+        float[] queryEmbedding = decodeFp16(searchParam.getEmbeddingBytes());
+        String classFilter = searchParam.getClassFilter();
 
         long t0 = System.currentTimeMillis();
 
@@ -132,7 +144,7 @@ public class PQFiltering {
             log.warn("[PQFilter] No candidates found (filter={})", classFilter);
             return List.of();
         }
-        List<SearchResult> candidates = searchMapper.findResnet50Phase2Targets(topUuids, excludeItemId);
+        List<SearchResult> candidates = searchMapper.findResnet50Phase2Targets(topUuids, id);
         long t3 = System.currentTimeMillis();
 
         // 5. 코사인 유사도 계산
@@ -218,19 +230,19 @@ public class PQFiltering {
 
     /**
      * IEEE 754 half-precision (16-bit) → single-precision (32-bit) 변환.
-     *
-     *   half  : [ sign 1 | exp 5 | mantissa 10 ]   = 16 bit, exponent bias = 15
-     *   float : [ sign 1 | exp 8 | mantissa 23 ]   = 32 bit, exponent bias = 127
-     *
+     * <p>
+     * half  : [ sign 1 | exp 5 | mantissa 10 ]   = 16 bit, exponent bias = 15
+     * float : [ sign 1 | exp 8 | mantissa 23 ]   = 32 bit, exponent bias = 127
+     * <p>
      * 변환 규칙:
-     *   • exp 가 0      → 0 또는 비정규수(subnormal). 비정규는 정규화하면서 exp 보정.
-     *   • exp 가 0x1F   → 무한대 또는 NaN.
-     *   • 그 외 정상값   → exp 에 (127-15)=112 더해서 bias 차이 흡수, mantissa 는 <<13 으로 확장.
+     * • exp 가 0      → 0 또는 비정규수(subnormal). 비정규는 정규화하면서 exp 보정.
+     * • exp 가 0x1F   → 무한대 또는 NaN.
+     * • 그 외 정상값   → exp 에 (127-15)=112 더해서 bias 차이 흡수, mantissa 는 <<13 으로 확장.
      */
     static float halfToFloat(short hbits) {
-        int h    = hbits & 0xFFFF;          // 부호 확장 방지
+        int h = hbits & 0xFFFF;          // 부호 확장 방지
         int sign = (h >>> 15) & 0x1;        // 최상위 1 비트
-        int exp  = (h >>> 10) & 0x1F;       // 5 비트 지수
+        int exp = (h >>> 10) & 0x1F;       // 5 비트 지수
         int mant = h & 0x3FF;               // 10 비트 가수
 
         int bits;
@@ -390,4 +402,5 @@ public class PQFiltering {
             return codebook;
         }
     }
+
 }

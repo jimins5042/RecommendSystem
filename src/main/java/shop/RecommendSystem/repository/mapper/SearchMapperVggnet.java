@@ -16,9 +16,6 @@ public interface SearchMapperVggnet {
 
     ArrayList<PreFilterDto> findReduceTarget();
 
-    ArrayList<PreFilterDto> findPreFilterTarget(List<String> keySet);
-
-    List<SearchResult> findPreFilterTargetV2(@Param("keySet") List<String> keySet, @Param("id")Long id);
-
+    List<SearchResult> findPreFilterTarget(@Param("keySet") List<String> keySet, @Param("id")Long id);
 
 }

@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import shop.RecommendSystem.MessageQueue.MQService;
 import shop.RecommendSystem.dto.ImageInfo;
-import shop.RecommendSystem.recommend.ImageFeature.PHash;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
 
 import java.io.File;
@@ -96,7 +95,6 @@ public class UploadService {
         }
 
         String imgUrl = connectPath + "/" + category + "/" + fileName;
-        String pHash = new PHash().getPHash(file);
 
         File saveFile = new File(dir, fileName);
         file.transferTo(saveFile);
@@ -105,11 +103,10 @@ public class UploadService {
                 .imageUuid(uuid)
                 .imageOriginalName(file.getOriginalFilename())
                 .imageUrl(imgUrl)
-                .imageHashCode(pHash)
                 .itemId(itemId)
                 .build();
 
-        log.info("fullPath={} \nuuid={} \nfileName={} \npHash={}", imgUrl, uuid, file.getOriginalFilename(), pHash);
+        log.info("fullPath={} \nuuid={} \nfileName={}", imgUrl, uuid, file.getOriginalFilename());
         return image;
     }
 
@@ -131,7 +128,6 @@ public class UploadService {
             }
 
             String imgUrl = connectPath + "/" + fileName;
-            String pHash = new PHash().getPHash(file);
 
             File saveFile = new File(dir, fileName);
             file.transferTo(saveFile);
@@ -140,11 +136,10 @@ public class UploadService {
                     .imageUuid(uuid)                                //이미지 식별번호
                     .imageOriginalName(file.getOriginalFilename())  //이미지 명
                     .imageUrl(imgUrl)                               //이미지 저장경로
-                    .imageHashCode(pHash)                           //이미지 pHash
                     .itemId(itemId)                                 //상품 번호
                     .build();
 
-            log.info("fullPath={} \nuuid={} \nfileName = {} \npHash = {}", imgUrl, uuid, file.getOriginalFilename(), pHash);
+            log.info("fullPath={} \nuuid={} \nfileName = {}", imgUrl, uuid, file.getOriginalFilename());
             return image;
 
         } catch (Exception e) {

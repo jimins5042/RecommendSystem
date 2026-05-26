@@ -5,13 +5,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
-import shop.RecommendSystem.dto.DetectionDto;
-import shop.RecommendSystem.dto.Item;
-import shop.RecommendSystem.dto.SearchResult;
-import shop.RecommendSystem.dto.ImageFeatureApiDto;
+import shop.RecommendSystem.dto.*;
 import shop.RecommendSystem.recommend.ImageFeature.ImageFeature;
+import shop.RecommendSystem.recommend.ItemFiltering.PQFiltering;
+import shop.RecommendSystem.recommend.ItemFiltering.SparseFeatureIndexing;
+import shop.RecommendSystem.repository.mapper.ItemMapper;
 import shop.RecommendSystem.shoppingMall.ShopService;
 
 import java.util.*;
@@ -21,9 +24,12 @@ import java.util.*;
 @Slf4j
 public class SearchController {
 
-    private final SearchService searchService;
+    private final PQFiltering pqFiltering;
+    private final SparseFeatureIndexing sparseFeatureIndexing;
+
     private final ImageFeature imageFeature;
     private final ShopService shopService;
+    private final ItemMapper itemMapper;
 
     @GetMapping("/search/findImg")
     public String findImg(
@@ -56,10 +62,10 @@ public class SearchController {
 
     /**
      * 메인 이미지 검색 (AJAX). JSON 응답:
-     *  - results: List<SearchResult>
-     *  - searchedImage: data URL (base64)
-     *  - detections: [{className, confidence, coordinate[]}]
-     *  - currentBackbone: 실제 사용된 백본명
+     * - results: List<SearchResult>
+     * - searchedImage: data URL (base64)
+     * - detections: [{className, confidence, coordinate[]}]
+     * - currentBackbone: 실제 사용된 백본명
      */
     @PostMapping("/search/img")
     @ResponseBody
@@ -77,9 +83,19 @@ public class SearchController {
         List<SearchResult> results;
         if ("resnet50".equals(backbone)) {
             String classFilter = useClassFilter ? apiResult.getDetectedClass() : null;
-            results = searchService.searchByResnet50(apiResult.getEmbedding(), classFilter, 20, null);
+            results = pqFiltering.searchSimilarItem(
+                    new ItemFilteringVo().pqFiltering(apiResult.getEmbedding(), classFilter),
+                    20,
+                    null);
+
+        } else if ("vggnet".equals(backbone)) {
+
+            results = sparseFeatureIndexing.searchSimilarItem(
+                    new ItemFilteringVo().sparseFeatureIndexing(apiResult.getFeatures(), apiResult.getOrder()),
+                    20,
+                    null);
         } else {
-            results = searchService.searchSimilarItems(apiResult.getOrder(), apiResult.getFeatures(), 20, null);
+            return null;
         }
 
         // 검색 이미지 (base64)
@@ -116,38 +132,68 @@ public class SearchController {
         backbone = normalizeBackbone(backbone);
         ImageFeatureApiDto apiResult = imageFeature.sendCropImageToFastAPI(file, backbone);
 
+        // 백본별 검색 분기
+        List<SearchResult> results;
         if ("resnet50".equals(backbone)) {
             String classFilter = useClassFilter ? apiResult.getDetectedClass() : null;
-            return searchService.searchByResnet50(apiResult.getEmbedding(), classFilter, 20, null);
+            results = pqFiltering.searchSimilarItem(
+                    new ItemFilteringVo().pqFiltering(apiResult.getEmbedding(), classFilter),
+                    20,
+                    null);
+
+        } else if ("vggnet".equals(backbone)) {
+
+            results = sparseFeatureIndexing.searchSimilarItem(
+                    new ItemFilteringVo().sparseFeatureIndexing(apiResult.getFeatures(), apiResult.getOrder()),
+                    20,
+                    null);
+        } else {
+            return null;
         }
-        return searchService.searchSimilarItems(apiResult.getOrder(), apiResult.getFeatures(), 20, null);
+
+        return results;
     }
 
+
     /**
-     * ResNet-50 + PQ 검색 — A/B 비교용 별도 엔드포인트.
-     *
-     * 파라미터:
-     *   imgFile         — 질의 이미지 (multipart)
-     *   useClassFilter  — true 면 YOLO detected_class 로 사전 필터링 (기본 false)
-     *   resultSize      — 최종 반환 개수 (기본 20)
-     *
-     * 응답: JSON (List<SearchResult>), 각 결과의 cosineSimilarity 가 정렬 기준
+     * 평가용 카테고리별 랜덤 샘플. 응답 구조:
+     * { perCategory, categories: [ { category, items: [ {itemId, itemTitle, imageUrl} ] } ] }
      */
-    @PostMapping("/search/img/resnet50")
+    @GetMapping("/search/eval/samples")
     @ResponseBody
-    public List<SearchResult> searchResnet50(
-            @RequestParam("imgFile") MultipartFile file,
-            @RequestParam(value = "useClassFilter", defaultValue = "false") boolean useClassFilter,
-            @RequestParam(value = "resultSize", defaultValue = "20") int resultSize) throws Exception {
+    public Map<String, Object> evalSamples(
+            @RequestParam(value = "perCategory", defaultValue = "20") int perCategory) {
 
-        ImageFeatureApiDto api = imageFeature.sendImageToFastAPI(file, "resnet50");
-        String classFilter = useClassFilter ? api.getDetectedClass() : null;
+        // 비정상 입력 방어
+        if (perCategory < 1) perCategory = 1;
+        if (perCategory > 100) perCategory = 100;
 
-        log.info("[resnet50] useClassFilter={}, detectedClass={}, embedding={}bytes",
-                useClassFilter, api.getDetectedClass(),
-                api.getEmbedding() != null ? api.getEmbedding().length : 0);
+        List<Item> samples = itemMapper.findRandomByCategory(perCategory);
 
-        return searchService.searchByResnet50(api.getEmbedding(), classFilter, resultSize, null);
+        // 카테고리별로 그룹핑 (조회 결과는 이미 category, rn 정렬됨)
+        Map<String, List<Map<String, Object>>> grouped = new LinkedHashMap<>();
+        for (Item it : samples) {
+            if (it.getImageUrl() == null || it.getCategory() == null) continue;
+            grouped.computeIfAbsent(it.getCategory(), k -> new ArrayList<>())
+                    .add(Map.of(
+                            "itemId", it.getItemId(),
+                            "itemTitle", it.getItemTitle() == null ? "" : it.getItemTitle(),
+                            "imageUrl", it.getImageUrl()
+                    ));
+        }
+
+        List<Map<String, Object>> categories = new ArrayList<>();
+        for (Map.Entry<String, List<Map<String, Object>>> e : grouped.entrySet()) {
+            categories.add(Map.of(
+                    "category", e.getKey(),
+                    "items", e.getValue()
+            ));
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("perCategory", perCategory);
+        response.put("categories", categories);
+        return response;
     }
 
     // 반복되는 맵 생성 로직 분리

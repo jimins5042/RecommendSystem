@@ -7,10 +7,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import shop.RecommendSystem.dto.Item;
-import shop.RecommendSystem.dto.Page;
-import shop.RecommendSystem.dto.Reply;
-import shop.RecommendSystem.dto.SearchResult;
+import shop.RecommendSystem.dto.*;
 import shop.RecommendSystem.search.SearchService;
 
 import java.io.IOException;
@@ -112,11 +109,13 @@ public class ShopController {
 
             //추천 상품 조회
             if (item.getEmbeddingValue() != null) {
-                //byte[] embeddingBytes, String classFilter, int resultSize, Long excludeItemId) {
-                List<SearchResult> results = searchService.searchByResnet50(item.getEmbeddingValue(), item.getDetectedClass(), 8, id);
-                {
-                    model.addAttribute("results", results);
-                }
+
+                List<SearchResult> results = searchService.searchSimilarItems(
+                        new ItemFilteringVo().pqFiltering(item.getEmbeddingValue(), item.getDetectedClass()),
+                        8,
+                        id);
+
+                model.addAttribute("results", results);
 
                 //댓글 조회
                 ArrayList<Reply> replies = replyService.getReplies(id);
@@ -138,27 +137,27 @@ public class ShopController {
         return "shop/showItem";
     }
 
-    @GetMapping("/shop/addItemPage")
-    public String addItemPage() {
-        return "shop/insertItem";
-    }
-
-    @PostMapping("/shop/addItemAction")
-    public String addItemAction(@ModelAttribute Item itemForm, @RequestParam("imgFile") MultipartFile[] files) throws
-            IOException {
-
-        Long productId = shopService.insertItem(itemForm, files);
-
-        return "redirect:shop/detail/" + productId;
-
-    }
-
-    @GetMapping("/shop/delete/{id}")
-    public String deleteItem(@PathVariable("id") Long id, Model model) {
-        shopRepository.deleteItem(id);
-
-        return "shop/itemList";
-    }
+//    @GetMapping("/shop/addItemPage")
+//    public String addItemPage() {
+//        return "shop/insertItem";
+//    }
+//
+//    @PostMapping("/shop/addItemAction")
+//    public String addItemAction(@ModelAttribute Item itemForm, @RequestParam("imgFile") MultipartFile[] files) throws
+//            IOException {
+//
+//        Long productId = shopService.insertItem(itemForm, files);
+//
+//        return "redirect:shop/detail/" + productId;
+//
+//    }
+//
+//    @GetMapping("/shop/delete/{id}")
+//    public String deleteItem(@PathVariable("id") Long id, Model model) {
+//        shopRepository.deleteItem(id);
+//
+//        return "shop/itemList";
+//    }
 
     @GetMapping("/shop/{id}/showReplyList")
     public String showReplyList(@PathVariable("id") Long id, Model model) {

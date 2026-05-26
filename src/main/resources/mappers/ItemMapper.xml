@@ -116,6 +116,28 @@
         </if>
     </select>
 
+    <!-- 카테고리별 랜덤 샘플 (평가용). 각 카테고리에서 perCategory 개수만큼 무작위로 1상품-1대표이미지 추출 -->
+    <select id="findRandomByCategory" resultType="Item" parameterType="int">
+        SELECT item_id, item_title, item_price, image_url, category
+        FROM (
+            SELECT s.item_id, s.item_title, s.item_price, s.category, i.image_url,
+                   ROW_NUMBER() OVER (PARTITION BY s.category ORDER BY DBMS_RANDOM.VALUE) AS rn
+            FROM shop_board s
+            INNER JOIN (
+                SELECT item_id, image_url FROM (
+                    SELECT item_id, image_url,
+                           ROW_NUMBER() OVER (PARTITION BY item_id ORDER BY image_uuid ASC) AS img_rn
+                    FROM image_info
+                    WHERE image_url IS NOT NULL
+                )
+                WHERE img_rn = 1
+            ) i ON s.item_id = i.item_id
+            WHERE s.category IS NOT NULL
+        )
+        WHERE rn &lt;= #{perCategory}
+        ORDER BY category, rn
+    </select>
+
     <delete id="delete" parameterType="Long">
         DELETE
             s, i

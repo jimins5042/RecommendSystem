@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import shop.RecommendSystem.dto.PqEntry;
 import shop.RecommendSystem.dto.PreFilterDto;
 import shop.RecommendSystem.repository.mapper.SearchMapper;
-import shop.RecommendSystem.repository.mapper.SearchMapperVggnet;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,10 +25,9 @@ public class InitializeSearchData {
     public static final String PQ_FILTERING_FIELD = "searchData";
 
     private final RedisTemplate redisTemplate;
-    private final BitwiseAndFiltering bitwiseAndFiltering;
+    private final SparseFeatureIndexing sparseFeatureIndexing;
     private final PQFiltering pqFiltering;
     private final SearchMapper searchMapper;
-    private final SearchMapperVggnet searchMapperVggnet;
 
     // 프로젝트 시작시 실행
     @PostConstruct
@@ -42,7 +40,8 @@ public class InitializeSearchData {
 
 //        if(true) {
         if(bitwiseANDFilteringList == null || bitwiseANDFilteringList.isEmpty()) {
-            bitwiseANDFilteringList= bitwiseAndFiltering.initializeSearchData();
+
+            bitwiseANDFilteringList= sparseFeatureIndexing.initializeSearchData();
             hashOps.put("bitwiseANDFiltering", "searchData", bitwiseANDFilteringList);
 
             log.info("=== BitwiseAndFiltering list redis 적재 ===");
