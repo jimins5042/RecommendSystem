@@ -2,7 +2,7 @@
 
 ## 고속 이미지 검색을 지원하는 이미지 기반 추천 시스템
 
-배포 주소 : [https://port-0-recommendsystem-m06bzsd06bb1d433.sel4.cloudtype.app/shop/main](http://158.179.171.178:8080/search/findImg?backbone=vggnet)
+배포 주소 : https://mekaive.com/search/findImg?backbone=vggnet
 
 ### 프로젝트 소개
 
