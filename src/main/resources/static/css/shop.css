@@ -116,6 +116,14 @@ img {
   font-weight: 700;
   color: var(--color-primary);
   letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+}
+
+.shop-navbar .navbar-brand__logo {
+  height: 32px;
+  width: auto;
+  display: block;
 }
 
 .shop-navbar .nav-link {
