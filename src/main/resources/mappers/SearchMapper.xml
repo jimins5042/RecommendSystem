@@ -11,9 +11,10 @@
 
     <!-- 메모리 PQ 인덱스 적재용 (@PostConstruct 에서 1회 호출) -->
     <select id="findAllPqCodes" resultType="PqEntry">
-        SELECT image_uuid      AS imageUuid,
-               pq_code         AS pqCode,
-               detected_class  AS detectedClass
+        SELECT image_uuid            AS imageUuid,
+               pq_code               AS pqCode,
+               detected_class        AS detectedClass,
+               COALESCE(coarse_id, -1) AS coarseId
         FROM image_info
         WHERE pq_code IS NOT NULL
     </select>

@@ -39,3 +39,5 @@ out/
 
 /src/main/resources/wallet/
 /src/main/resources/upload/*
+/src/main/resources/wallet_backup/
+/startup.sh

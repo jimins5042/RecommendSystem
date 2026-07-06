@@ -48,14 +48,27 @@ public class PQFiltering implements ItemFiltering {
     @Value("${pq.candidate.size:350}")
     private int candidateSize;
 
+    // IVF coarse centroid 파일 (float[nlist][D]). 미설정/미존재 시 IVF 비활성 → 전수 스캔 폴백.
+    @Value("${pq.coarse.path:}")
+    private String coarsePath;
+
+    // 질의당 탐색할 coarse cell 개수 (nprobe). 클수록 recall↑ 속도↓.
+    @Value("${pq.nprobe:16}")
+    private int nProbe;
+
     // 코드북: float[M][K][D_sub] — (64, 256, 32)
     private float[][][] codebook;
     private int M;
     private int K;
     private int dSub;
+    private int dim;   // = M * dSub (전체 임베딩 차원, coarse centroid 차원과 일치해야 함)
+
+    // IVF coarse centroids: float[nlist][dim]. ivfEnabled=false 면 null.
+    private float[][] coarseCentroids;
+    private boolean ivfEnabled;
 
     private List<PqEntry> pqIndex;
-    private Map<String, List<PqEntry>> pqIndexByClass;
+    private Map<Integer, List<PqEntry>> pqIndexByCoarse;   // IVF inverted list
 
     /**
      * 코드북만 파일에서 로드. PQ 인덱스(DB 적재) 는 InitializeSearchData 가
@@ -63,13 +76,41 @@ public class PQFiltering implements ItemFiltering {
      */
     @PostConstruct
     public void init() throws IOException {
+        log.info("===== PQFiltering init =====");
         long t0 = System.currentTimeMillis();
         codebook = loadCodebook(codebookPath);
         M = codebook.length;
         K = codebook[0].length;
         dSub = codebook[0][0].length;
+        dim = M * dSub;
         log.info("[PQFilter] Codebook loaded: M={}, K={}, D_sub={} ({}ms)",
                 M, K, dSub, System.currentTimeMillis() - t0);
+
+        // ── IVF coarse centroids (선택적) ──────────────────────────────
+        // 파일이 지정/존재하면 IVF 활성, 아니면 기존 전수 스캔으로 폴백.
+        // 설정값을 따옴표로 감싸 로깅 → 경로 뒤에 공백/주석이 붙은 경우가 바로 드러남.
+        log.info("[PQFilter] IVF 설정 확인 — pq.coarse.path=[{}], pq.nprobe={}", coarsePath, nProbe);
+        if (coarsePath == null || coarsePath.isBlank()) {
+            ivfEnabled = false;
+            log.info("[PQFilter] IVF 비활성 — coarse 경로 미설정(빈 값). 전수 ADC 스캔으로 동작.");
+        } else {
+            java.io.File coarseFile = new java.io.File(coarsePath);
+            if (!coarseFile.exists()) {
+                ivfEnabled = false;
+                log.warn("[PQFilter] IVF 비활성 — coarse 파일을 찾지 못함: 절대경로=[{}] "
+                        + "(경로 오타/치환 실패/값 뒤 공백 여부 확인). 전수 ADC 스캔으로 동작.",
+                        coarseFile.getAbsolutePath());
+            } else {
+                coarseCentroids = loadCoarseCentroids(coarsePath);
+                if (coarseCentroids[0].length != dim) {
+                    throw new IOException("Coarse centroid dim(" + coarseCentroids[0].length
+                            + ") != embedding dim(" + dim + ")");
+                }
+                ivfEnabled = true;
+                log.info("[PQFilter] IVF 활성 — coarse centroid 로드 완료: nlist={}, dim={}, nprobe={}, 파일=[{}]",
+                        coarseCentroids.length, coarseCentroids[0].length, nProbe, coarseFile.getAbsolutePath());
+            }
+        }
     }
 
     /**
@@ -81,14 +122,17 @@ public class PQFiltering implements ItemFiltering {
      */
     public void loadIndex(List<PqEntry> entries) {
         this.pqIndex = entries;
-        this.pqIndexByClass = entries.stream()
-                .filter(e -> e.getDetectedClass() != null && !e.getDetectedClass().isEmpty())
-                .collect(Collectors.groupingBy(PqEntry::getDetectedClass));
-        log.info("[PQFilter] Index loaded: {} entries, partitions: {}",
-                entries.size(),
-                pqIndexByClass.entrySet().stream()
-                        .map(e -> e.getKey() + "=" + e.getValue().size())
-                        .collect(Collectors.joining(", ")));
+        // IVF inverted list: coarse_id → 해당 셀에 속한 엔트리들.
+        // coarse_id 미적재(-1) 엔트리는 어떤 셀에도 안 잡혀 검색에서 누락되므로 개수를 경고.
+        this.pqIndexByCoarse = entries.stream()
+                .collect(Collectors.groupingBy(PqEntry::getCoarseId));
+        long unassigned = pqIndexByCoarse.getOrDefault(-1, List.of()).size();
+        if (unassigned > 0) {
+            log.warn("[PQFilter] {} entries have no coarse_id (-1) — invisible under IVF. "
+                    + "coarse_id backfill 필요.", unassigned);
+        }
+        log.info("[PQFilter] Index loaded: {} entries, coarse cells: {}",
+                entries.size(), pqIndexByCoarse.size());
     }
 
     /**
@@ -115,10 +159,14 @@ public class PQFiltering implements ItemFiltering {
         float[][] lookup = buildLookupTable(queryEmbedding);
         long t1 = System.currentTimeMillis();
 
-        // 2. 클래스 필터 적용
-        List<PqEntry> scanList = (classFilter != null && pqIndexByClass.containsKey(classFilter))
-                ? pqIndexByClass.get(classFilter)
-                : pqIndex;
+        // 2. IVF — coarse cell nprobe개 선택 후 해당 셀 엔트리만 스캔 대상으로.
+        //    class 는 셀 선택에 관여하지 않고 후처리(스캔 시)에서만 필터링.
+        List<PqEntry> scanList = collectScanList(queryEmbedding, classFilter);
+        log.info("[PQFilter] 검색 모드={}, 전체 인덱스={}건 → 스캔 대상={}건 (nprobe={}, classFilter={})",
+                ivfEnabled ? "IVF" : "전수(폴백)",
+                pqIndex.size(), scanList.size(),
+                ivfEnabled ? nProbe : "-",
+                classFilter == null ? "없음" : classFilter);
 
         // 3. 비대칭 거리 + Top-N 후보 추출 (max-heap 으로 K-th 미만만 유지)
         PriorityQueue<float[]> heap = new PriorityQueue<>(
@@ -167,6 +215,65 @@ public class PQFiltering implements ItemFiltering {
     // ════════════════════════════════════════
     // 내부 계산 — lookup / asymmetric distance / cosine
     // ════════════════════════════════════════
+
+    /**
+     * 스캔 대상 엔트리 목록 구성.
+     * <p>
+     * IVF 활성: 질의와 가까운 coarse cell nprobe개를 골라 그 셀들의 엔트리만 합침.
+     * IVF 비활성: 전체 인덱스(전수 스캔 폴백).
+     * <p>
+     * classFilter 가 있으면 셀 선택과 무관하게 detected_class 가 일치하는 엔트리만 남김(후처리).
+     */
+    private List<PqEntry> collectScanList(float[] queryEmbedding, String classFilter) {
+        List<PqEntry> base;
+        if (ivfEnabled) {
+            int[] probes = selectProbes(queryEmbedding);
+            base = new ArrayList<>();
+            for (int cell : probes) {
+                List<PqEntry> bucket = pqIndexByCoarse.get(cell);
+                if (bucket != null) base.addAll(bucket);
+            }
+        } else {
+            base = pqIndex;
+        }
+        if (classFilter == null || classFilter.isEmpty()) {
+            return base;
+        }
+        List<PqEntry> filtered = new ArrayList<>(base.size());
+        for (PqEntry e : base) {
+            if (classFilter.equals(e.getDetectedClass())) filtered.add(e);
+        }
+        return filtered;
+    }
+
+    /**
+     * 질의 임베딩과 가장 가까운 coarse centroid nProbe개의 cell id 반환.
+     * 전체 nlist 에 대해 L2² 거리를 구한 뒤 상위 nProbe개 선택(부분 정렬).
+     */
+    private int[] selectProbes(float[] query) {
+        int nList = coarseCentroids.length;
+        int p = Math.min(nProbe, nList);
+        // (distance, cellId) 를 max-heap 으로 유지하며 가장 가까운 p개만 보존
+        PriorityQueue<float[]> heap = new PriorityQueue<>(p, (a, b) -> Float.compare(b[0], a[0]));
+        for (int c = 0; c < nList; c++) {
+            float[] centroid = coarseCentroids[c];
+            float d = 0f;
+            for (int i = 0; i < dim; i++) {
+                float diff = query[i] - centroid[i];
+                d += diff * diff;
+            }
+            if (heap.size() < p) {
+                heap.offer(new float[]{d, c});
+            } else if (d < heap.peek()[0]) {
+                heap.poll();
+                heap.offer(new float[]{d, c});
+            }
+        }
+        int[] cells = new int[heap.size()];
+        int idx = 0;
+        for (float[] h : heap) cells[idx++] = (int) h[1];
+        return cells;
+    }
 
     private float[][] buildLookupTable(float[] embedding) {
         float[][] lookup = new float[M][K];
@@ -400,6 +507,76 @@ public class PQFiltering implements ItemFiltering {
                 }
             }
             return codebook;
+        }
+    }
+
+    /**
+     * IVF coarse centroids 로더 — 2D '<f4' C-order npy (nlist, dim).
+     * loadCodebook 과 동일한 NPY 파싱을 쓰되 shape 만 2D 로 검증.
+     * train_ivf_coarse.py 에서 np.save(path, centroids.astype(np.float32)) 로 저장.
+     */
+    static float[][] loadCoarseCentroids(String path) throws IOException {
+        try (DataInputStream in = new DataInputStream(
+                new BufferedInputStream(new FileInputStream(path)))) {
+
+            byte[] magic = new byte[6];
+            in.readFully(magic);
+            if (magic[0] != (byte) 0x93 || magic[1] != 'N' || magic[2] != 'U'
+                    || magic[3] != 'M' || magic[4] != 'P' || magic[5] != 'Y') {
+                throw new IOException("Not a NPY file: " + path);
+            }
+
+            int major = in.readUnsignedByte();
+            in.readUnsignedByte();                                              // minor
+
+            int headerLen;
+            if (major == 1) {
+                int b0 = in.readUnsignedByte(), b1 = in.readUnsignedByte();
+                headerLen = (b1 << 8) | b0;                                      // LE uint16
+            } else if (major == 2 || major == 3) {
+                int b0 = in.readUnsignedByte(), b1 = in.readUnsignedByte();
+                int b2 = in.readUnsignedByte(), b3 = in.readUnsignedByte();
+                headerLen = (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;            // LE uint32
+            } else {
+                throw new IOException("Unsupported NPY version: " + major);
+            }
+
+            byte[] headerBytes = new byte[headerLen];
+            in.readFully(headerBytes);
+            String header = new String(headerBytes, StandardCharsets.US_ASCII);
+
+            Matcher dmatch = Pattern.compile("'descr':\\s*'([^']+)'").matcher(header);
+            if (!dmatch.find()) throw new IOException("Cannot parse descr: " + header);
+            if (!"<f4".equals(dmatch.group(1))) {
+                throw new IOException("Expected '<f4', got '" + dmatch.group(1) + "'");
+            }
+            if (header.contains("'fortran_order': True")) {
+                throw new IOException("Fortran-order NPY not supported");
+            }
+
+            Matcher smatch = Pattern.compile("'shape':\\s*\\(([^)]*)\\)").matcher(header);
+            if (!smatch.find()) throw new IOException("Cannot parse shape: " + header);
+            String[] dimStr = smatch.group(1).split(",");
+            int[] dims = new int[2];
+            int validDims = 0;
+            for (String s : dimStr) {
+                String trimmed = s.trim();
+                if (trimmed.isEmpty()) continue;
+                if (validDims >= 2) throw new IOException("Only 2D coarse centroids supported: " + header);
+                dims[validDims++] = Integer.parseInt(trimmed);
+            }
+            if (validDims != 2) throw new IOException("Expected 2D centroids, got " + validDims + "D: " + header);
+
+            int nList = dims[0], D = dims[1];
+            byte[] dataBytes = new byte[nList * D * 4];
+            in.readFully(dataBytes);
+            FloatBuffer fb = ByteBuffer.wrap(dataBytes).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer();
+
+            float[][] centroids = new float[nList][D];
+            for (int c = 0; c < nList; c++) {
+                fb.get(centroids[c]);
+            }
+            return centroids;
         }
     }
 

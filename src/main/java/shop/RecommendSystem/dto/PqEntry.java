@@ -15,11 +15,15 @@ import java.io.Serializable;
 @Getter
 @Setter
 public class PqEntry implements Serializable {
-    private static final long serialVersionUID = 1L;
+    // coarseId(IVF) 필드 추가로 구버전 캐시 무효화 → 2L 로 bump
+    private static final long serialVersionUID = 2L;
 
     private String imageUuid;
     private byte[] pqCode;
     private String detectedClass;
+
+    // IVF coarse cell 번호. coarse_id 컬럼 미적재(NULL) 시 -1.
+    private int coarseId = -1;
 
     public PqEntry() {}
 }

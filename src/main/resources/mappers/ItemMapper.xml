@@ -246,4 +246,249 @@
         DROP TABLE image_resnet50_staging
     </update>
 
+    <!-- ════════════════════════════════════════════
+         이관(Migration) 전용 SQL
+         ════════════════════════════════════════════ -->
+
+    <!-- 페이징 SELECT (전체 스캔) -->
+    <select id="countShopBoard" resultType="Long">
+        SELECT COUNT(1) FROM shop_board
+    </select>
+
+    <select id="selectShopBoardPage" resultType="Item" parameterType="Map">
+        SELECT item_id       AS itemId,
+               item_title    AS itemTitle,
+               item_content  AS itemContent,
+               item_price    AS itemPrice,
+               category      AS category,
+               created_at    AS createdAt,
+               updated_at    AS updatedAt
+        FROM shop_board
+        ORDER BY item_id
+        OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+    </select>
+
+    <select id="countImageInfo" resultType="Long">
+        SELECT COUNT(1) FROM image_info
+    </select>
+
+    <select id="selectImageInfoPage" resultType="shop.RecommendSystem.dto.ImageInfo" parameterType="Map">
+        SELECT item_id              AS itemId,
+               image_uuid           AS imageUuid,
+               image_original_name  AS imageOriginalName,
+               image_url            AS imageUrl,
+               created_at           AS createdAt,
+               updated_at           AS updatedAt,
+               pq_code              AS pqCode,
+               embedding_value      AS embeddingValue,
+               detected_class       AS detectedClass
+        FROM image_info
+        ORDER BY image_uuid
+        OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+    </select>
+
+    <!-- shop_board 스테이징 (실제 스키마: item_content CLOB, item_price NUMBER(10,2)) -->
+    <update id="createShopBoardMigrationStaging">
+        CREATE TABLE shop_board_migration_staging (
+            item_id       NUMBER,
+            item_title    VARCHAR2(255),
+            item_content  CLOB,
+            item_price    NUMBER(10,2),
+            category      VARCHAR2(100),
+            created_at    TIMESTAMP,
+            updated_at    TIMESTAMP
+        )
+    </update>
+
+    <insert id="insertShopBoardMigrationStaging">
+        INSERT ALL
+        <foreach collection="list" item="item">
+            INTO shop_board_migration_staging
+            (item_id, item_title, item_content, item_price, category, created_at, updated_at)
+            VALUES
+            (#{item.itemId},
+             #{item.itemTitle,jdbcType=VARCHAR},
+             #{item.itemContent,jdbcType=CLOB},
+             #{item.itemPrice,jdbcType=NUMERIC},
+             #{item.category,jdbcType=VARCHAR},
+             #{item.createdAt,jdbcType=TIMESTAMP},
+             #{item.updatedAt,jdbcType=TIMESTAMP})
+        </foreach>
+        SELECT 1 FROM dual
+    </insert>
+
+    <update id="mergeShopBoardMigration">
+        MERGE INTO shop_board t
+        USING shop_board_migration_staging s
+        ON (t.item_id = s.item_id)
+        WHEN MATCHED THEN UPDATE SET
+            t.item_title   = s.item_title,
+            t.item_content = s.item_content,
+            t.item_price   = s.item_price,
+            t.category     = s.category,
+            t.updated_at   = CURRENT_TIMESTAMP
+        WHEN NOT MATCHED THEN INSERT
+            (item_id, item_title, item_content, item_price, category, created_at, updated_at)
+        VALUES
+            (s.item_id, s.item_title, s.item_content, s.item_price, s.category,
+             COALESCE(s.created_at, CURRENT_TIMESTAMP),
+             COALESCE(s.updated_at, CURRENT_TIMESTAMP))
+    </update>
+
+    <update id="dropShopBoardMigrationStaging">
+        DROP TABLE shop_board_migration_staging
+    </update>
+
+    <!-- image_info 스테이징 (실제 스키마 기준: hash/feature 컬럼 없음) -->
+    <update id="createImageInfoMigrationStaging">
+        CREATE TABLE image_info_migration_staging (
+            item_id              NUMBER,
+            image_uuid           VARCHAR2(255),
+            image_original_name  VARCHAR2(255),
+            image_url            VARCHAR2(1000),
+            created_at           TIMESTAMP,
+            updated_at           TIMESTAMP,
+            pq_code              BLOB,
+            embedding_value      BLOB,
+            detected_class       VARCHAR2(32)
+        )
+    </update>
+
+    <insert id="insertImageInfoMigrationStaging">
+        INSERT ALL
+        <foreach collection="list" item="img">
+            INTO image_info_migration_staging
+            (item_id, image_uuid, image_original_name, image_url,
+             created_at, updated_at,
+             pq_code, embedding_value, detected_class)
+            VALUES
+            (#{img.itemId,jdbcType=NUMERIC},
+             #{img.imageUuid,jdbcType=VARCHAR},
+             #{img.imageOriginalName,jdbcType=VARCHAR},
+             #{img.imageUrl,jdbcType=VARCHAR},
+             #{img.createdAt,jdbcType=TIMESTAMP},
+             #{img.updatedAt,jdbcType=TIMESTAMP},
+             #{img.pqCode,jdbcType=BLOB},
+             #{img.embeddingValue,jdbcType=BLOB},
+             #{img.detectedClass,jdbcType=VARCHAR})
+        </foreach>
+        SELECT 1 FROM dual
+    </insert>
+
+    <update id="mergeImageInfoMigration">
+        MERGE INTO image_info t
+        USING image_info_migration_staging s
+        ON (t.image_uuid = s.image_uuid)
+        WHEN MATCHED THEN UPDATE SET
+            t.item_id             = s.item_id,
+            t.image_original_name = s.image_original_name,
+            t.image_url           = s.image_url,
+            t.pq_code             = s.pq_code,
+            t.embedding_value     = s.embedding_value,
+            t.detected_class      = s.detected_class,
+            t.updated_at          = CURRENT_TIMESTAMP
+        WHEN NOT MATCHED THEN INSERT
+            (item_id, image_uuid, image_original_name, image_url,
+             created_at, updated_at,
+             pq_code, embedding_value, detected_class)
+        VALUES
+            (s.item_id, s.image_uuid, s.image_original_name, s.image_url,
+             COALESCE(s.created_at, CURRENT_TIMESTAMP),
+             COALESCE(s.updated_at, CURRENT_TIMESTAMP),
+             s.pq_code, s.embedding_value, s.detected_class)
+    </update>
+
+    <update id="dropImageInfoMigrationStaging">
+        DROP TABLE image_info_migration_staging
+    </update>
+
+    <!-- image_info_vggnet 페이징 + 스테이징 + MERGE -->
+    <select id="countImageInfoVggnet" resultType="Long">
+        SELECT COUNT(1) FROM image_info_vggnet
+    </select>
+
+    <select id="selectImageInfoVggnetPage" resultType="shop.RecommendSystem.dto.ImageInfo" parameterType="Map">
+        SELECT item_id              AS itemId,
+               image_uuid           AS imageUuid,
+               image_original_name  AS imageOriginalName,
+               image_url            AS imageUrl,
+               image_hash_code      AS imageHashCode,
+               img_feature_value    AS imgFeatureValue,
+               img_feature_order    AS imgFeatureOrder,
+               created_at           AS createdAt,
+               updated_at           AS updatedAt
+        FROM image_info_vggnet
+        ORDER BY image_uuid
+        OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+    </select>
+
+    <update id="createImageInfoVggnetMigrationStaging">
+        CREATE TABLE image_info_vggnet_migration_staging (
+            item_id              NUMBER,
+            image_uuid           VARCHAR2(255),
+            image_original_name  VARCHAR2(255),
+            image_url            VARCHAR2(1000),
+            image_hash_code      VARCHAR2(64),
+            img_feature_value    BLOB,
+            img_feature_order    VARCHAR2(1000),
+            created_at           TIMESTAMP,
+            updated_at           TIMESTAMP
+        )
+    </update>
+
+    <insert id="insertImageInfoVggnetMigrationStaging">
+        INSERT ALL
+        <foreach collection="list" item="img">
+            INTO image_info_vggnet_migration_staging
+            (item_id, image_uuid, image_original_name, image_url, image_hash_code,
+             img_feature_value, img_feature_order, created_at, updated_at)
+            VALUES
+            (#{img.itemId,jdbcType=NUMERIC},
+             #{img.imageUuid,jdbcType=VARCHAR},
+             #{img.imageOriginalName,jdbcType=VARCHAR},
+             #{img.imageUrl,jdbcType=VARCHAR},
+             #{img.imageHashCode,jdbcType=VARCHAR},
+             #{img.imgFeatureValue,jdbcType=BLOB},
+             #{img.imgFeatureOrder,jdbcType=VARCHAR},
+             #{img.createdAt,jdbcType=TIMESTAMP},
+             #{img.updatedAt,jdbcType=TIMESTAMP})
+        </foreach>
+        SELECT 1 FROM dual
+    </insert>
+
+    <update id="mergeImageInfoVggnetMigration">
+        MERGE INTO image_info_vggnet t
+        USING image_info_vggnet_migration_staging s
+        ON (t.image_uuid = s.image_uuid)
+        WHEN MATCHED THEN UPDATE SET
+            t.item_id             = s.item_id,
+            t.image_original_name = s.image_original_name,
+            t.image_url           = s.image_url,
+            t.image_hash_code     = s.image_hash_code,
+            t.img_feature_value   = s.img_feature_value,
+            t.img_feature_order   = s.img_feature_order,
+            t.updated_at          = CURRENT_TIMESTAMP
+        WHEN NOT MATCHED THEN INSERT
+            (item_id, image_uuid, image_original_name, image_url, image_hash_code,
+             img_feature_value, img_feature_order, created_at, updated_at)
+        VALUES
+            (s.item_id, s.image_uuid, s.image_original_name, s.image_url, s.image_hash_code,
+             s.img_feature_value, s.img_feature_order,
+             COALESCE(s.created_at, CURRENT_TIMESTAMP),
+             COALESCE(s.updated_at, CURRENT_TIMESTAMP))
+    </update>
+
+    <update id="dropImageInfoVggnetMigrationStaging">
+        DROP TABLE image_info_vggnet_migration_staging
+    </update>
+
+    <!-- 시퀀스 조정 -->
+    <select id="maxItemId" resultType="Long">
+        SELECT NVL(MAX(item_id), 0) FROM shop_board
+    </select>
+
+    <update id="alterShopBoardSeq">
+        ALTER SEQUENCE shop_board_seq RESTART START WITH ${startWith}
+    </update>
+
 </mapper>

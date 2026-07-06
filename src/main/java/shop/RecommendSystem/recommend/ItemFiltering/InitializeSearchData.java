@@ -38,7 +38,6 @@ public class InitializeSearchData {
         // ── 1. BitwiseAndFiltering (기존 VGG16+AND 검색용) ─────────────
         ArrayList<PreFilterDto> bitwiseANDFilteringList = (ArrayList<PreFilterDto>) hashOps.get("bitwiseANDFiltering", "searchData");
 
-//        if(true) {
         if(bitwiseANDFilteringList == null || bitwiseANDFilteringList.isEmpty()) {
 
             bitwiseANDFilteringList= sparseFeatureIndexing.initializeSearchData();

@@ -64,4 +64,38 @@ public interface ItemMapper {
 
     void dropResnet50Staging();
 
+    // ══════════════════════════════════════
+    // 이관(Migration) 전용
+    // ══════════════════════════════════════
+
+    // 페이징 SELECT
+    Long countShopBoard();
+    List<Item> selectShopBoardPage(Map<String, Object> map);
+    Long countImageInfo();
+    List<ImageInfo> selectImageInfoPage(Map<String, Object> map);
+
+    // shop_board 스테이징 + MERGE (upsert by item_id)
+    void createShopBoardMigrationStaging();
+    void insertShopBoardMigrationStaging(List<Item> list);
+    void mergeShopBoardMigration();
+    void dropShopBoardMigrationStaging();
+
+    // image_info 스테이징 + MERGE (upsert by image_uuid, 전체 컬럼)
+    void createImageInfoMigrationStaging();
+    void insertImageInfoMigrationStaging(List<ImageInfo> list);
+    void mergeImageInfoMigration();
+    void dropImageInfoMigrationStaging();
+
+    // image_info_vggnet 스테이징 + MERGE (upsert by image_uuid)
+    Long countImageInfoVggnet();
+    List<ImageInfo> selectImageInfoVggnetPage(Map<String, Object> map);
+    void createImageInfoVggnetMigrationStaging();
+    void insertImageInfoVggnetMigrationStaging(List<ImageInfo> list);
+    void mergeImageInfoVggnetMigration();
+    void dropImageInfoVggnetMigrationStaging();
+
+    // 시퀀스 조정 (import 완료 후 nextval 재정렬) — item_id만 조정 (image_uuid는 timestamp 기반)
+    Long maxItemId();
+    void alterShopBoardSeq(@org.apache.ibatis.annotations.Param("startWith") long startWith);
+
 }
