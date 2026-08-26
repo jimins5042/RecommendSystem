@@ -2,12 +2,14 @@ package shop.RecommendSystem.dto;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.Base64;
 import java.util.List;
 
 @Getter
 @Setter
+@ToString
 public class ImageFeatureApiDto {
 
     private String order;           // fillter index 순서

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import shop.RecommendSystem.dto.*;
 import shop.RecommendSystem.recommend.ImageFeature.ImageFeature;
+import shop.RecommendSystem.recommend.ItemFiltering.BruteForceSearch;
 import shop.RecommendSystem.recommend.ItemFiltering.PQFiltering;
 import shop.RecommendSystem.recommend.ItemFiltering.SparseFeatureIndexing;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
@@ -26,6 +27,7 @@ public class SearchController {
 
     private final PQFiltering pqFiltering;
     private final SparseFeatureIndexing sparseFeatureIndexing;
+    private final BruteForceSearch bruteForceSearch;
 
     private final ImageFeature imageFeature;
     private final ShopService shopService;
@@ -154,6 +156,36 @@ public class SearchController {
         return results;
     }
 
+
+    /**
+     * ResNet-50 완전탐색(brute-force exact cosine) 검색 — 평가용 정답셋(ground truth).
+     * <p>
+     * PQ 와 동일한 ResNet-50 임베딩을 쓰되 근사(PQ/IVF) 없이 전체 코퍼스와
+     * 정밀 코사인을 계산한다. 이 결과를 기준으로 PQ 의 Recall@K 를 잰다.
+     * 응답은 /search/img 와 동일 형태(results, elapsedMs, currentBackbone).
+     */
+    @PostMapping("/search/img/exact")
+    @ResponseBody
+    public Map<String, Object> exact(
+            @RequestParam("imgFile") MultipartFile file,
+            @RequestParam(value = "resultSize", defaultValue = "50") int resultSize) throws Exception {
+
+        if (resultSize < 1) resultSize = 1;
+        if (resultSize > 200) resultSize = 200;
+
+        // PQ 검색과 동일하게 ResNet-50 백본으로 질의 임베딩 추출
+        ImageFeatureApiDto apiResult = imageFeature.sendImageToFastAPI(file, "resnet50");
+
+        long t0 = System.currentTimeMillis();
+        List<SearchResult> results = bruteForceSearch.search(apiResult.getEmbedding(), resultSize, null);
+        long elapsedMs = System.currentTimeMillis() - t0;
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("results", results);
+        response.put("elapsedMs", elapsedMs);
+        response.put("currentBackbone", "resnet50_exact");
+        return response;
+    }
 
     /**
      * 평가용 카테고리별 랜덤 샘플. 응답 구조:

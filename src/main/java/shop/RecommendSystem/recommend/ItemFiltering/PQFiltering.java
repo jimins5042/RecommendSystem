@@ -11,19 +11,12 @@ import shop.RecommendSystem.dto.PqEntry;
 import shop.RecommendSystem.dto.SearchResult;
 import shop.RecommendSystem.repository.mapper.SearchMapper;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -83,34 +76,38 @@ public class PQFiltering implements ItemFiltering {
         K = codebook[0].length;
         dSub = codebook[0][0].length;
         dim = M * dSub;
-        log.info("[PQFilter] Codebook loaded: M={}, K={}, D_sub={} ({}ms)",
-                M, K, dSub, System.currentTimeMillis() - t0);
+        log.info("[PQFilter] Codebook loaded: M={}, K={}, D_sub={} ({}ms)", M, K, dSub, System.currentTimeMillis() - t0);
 
         // ── IVF coarse centroids (선택적) ──────────────────────────────
         // 파일이 지정/존재하면 IVF 활성, 아니면 기존 전수 스캔으로 폴백.
         // 설정값을 따옴표로 감싸 로깅 → 경로 뒤에 공백/주석이 붙은 경우가 바로 드러남.
         log.info("[PQFilter] IVF 설정 확인 — pq.coarse.path=[{}], pq.nprobe={}", coarsePath, nProbe);
+
         if (coarsePath == null || coarsePath.isBlank()) {
             ivfEnabled = false;
             log.info("[PQFilter] IVF 비활성 — coarse 경로 미설정(빈 값). 전수 ADC 스캔으로 동작.");
-        } else {
-            java.io.File coarseFile = new java.io.File(coarsePath);
-            if (!coarseFile.exists()) {
-                ivfEnabled = false;
-                log.warn("[PQFilter] IVF 비활성 — coarse 파일을 찾지 못함: 절대경로=[{}] "
-                        + "(경로 오타/치환 실패/값 뒤 공백 여부 확인). 전수 ADC 스캔으로 동작.",
-                        coarseFile.getAbsolutePath());
-            } else {
-                coarseCentroids = loadCoarseCentroids(coarsePath);
-                if (coarseCentroids[0].length != dim) {
-                    throw new IOException("Coarse centroid dim(" + coarseCentroids[0].length
-                            + ") != embedding dim(" + dim + ")");
-                }
-                ivfEnabled = true;
-                log.info("[PQFilter] IVF 활성 — coarse centroid 로드 완료: nlist={}, dim={}, nprobe={}, 파일=[{}]",
-                        coarseCentroids.length, coarseCentroids[0].length, nProbe, coarseFile.getAbsolutePath());
-            }
+
+            return;
         }
+
+        File coarseFile = new File(coarsePath);
+        if (!coarseFile.exists()) {
+            ivfEnabled = false;
+            log.warn("[PQFilter] IVF 비활성 — coarse 파일을 찾지 못함: 절대경로=[{}] "
+                            + "(경로 오타/치환 실패/값 뒤 공백 여부 확인). 전수 ADC 스캔으로 동작.",
+                    coarseFile.getAbsolutePath());
+            return;
+        }
+
+        coarseCentroids = loadCoarseCentroids(coarsePath);
+        if (coarseCentroids[0].length != dim) {
+            throw new IOException("Coarse centroid dim(" + coarseCentroids[0].length + ") != embedding dim(" + dim + ")");
+        }
+        ivfEnabled = true;
+        log.info("[PQFilter] IVF 활성 — coarse centroid 로드 완료: nlist={}, dim={}, nprobe={}, 파일=[{}]",
+                coarseCentroids.length, coarseCentroids[0].length, nProbe, coarseFile.getAbsolutePath());
+
+
     }
 
     /**
@@ -136,10 +133,11 @@ public class PQFiltering implements ItemFiltering {
     }
 
     /**
-     *  queryEmbedding 질의 임베딩 (float[2048])
-     *  classFilter    null 이면 전체 검색, 아니면 해당 detected_class 만
-     * @param resultSize     최종 반환 개수
-     * @param id             본인 상품 제외 (null 허용)
+     * queryEmbedding 질의 임베딩 (float[2048])
+     * classFilter    null 이면 전체 검색, 아니면 해당 detected_class 만
+     *
+     * @param resultSize 최종 반환 개수
+     * @param id         본인 상품 제외 (null 허용)
      */
 
 
@@ -159,18 +157,35 @@ public class PQFiltering implements ItemFiltering {
         float[][] lookup = buildLookupTable(queryEmbedding);
         long t1 = System.currentTimeMillis();
 
-        // 2. IVF — coarse cell nprobe개 선택 후 해당 셀 엔트리만 스캔 대상으로.
-        //    class 는 셀 선택에 관여하지 않고 후처리(스캔 시)에서만 필터링.
-        List<PqEntry> scanList = collectScanList(queryEmbedding, classFilter);
-        log.info("[PQFilter] 검색 모드={}, 전체 인덱스={}건 → 스캔 대상={}건 (nprobe={}, classFilter={})",
+        // 2. IVF — coarse cell nprobe개 선택 후 해당 셀 엔트리만 스캔 대상으로 목록 구성
+        //  - IVF 활성: 질의와 가까운 coarse cell nprobe개를 골라 그 셀들의 엔트리만 합침.
+        //  - IVF 비활성: 전체 인덱스(전수 스캔 폴백).
+        List<PqEntry> scanList = new ArrayList<>();
+        int[] probes = null;
+
+        if (ivfEnabled) {
+
+            probes = selectProbes(queryEmbedding);
+            log.info("선택된 coarse cell 목록 = {}",Arrays.toString(probes));
+
+            for (int cell : probes) {
+                List<PqEntry> bucket = pqIndexByCoarse.get(cell);
+                if (bucket != null) scanList.addAll(bucket);
+            }
+
+        }else{
+            scanList = pqIndex;
+        }
+
+
+        log.info("[PQFilter] 검색 모드={}, 전체 인덱스={}건 → 스캔 대상={}건 (nprobe={})",
                 ivfEnabled ? "IVF" : "전수(폴백)",
                 pqIndex.size(), scanList.size(),
-                ivfEnabled ? nProbe : "-",
-                classFilter == null ? "없음" : classFilter);
+                ivfEnabled ? nProbe : "-"
+        );
 
         // 3. 비대칭 거리 + Top-N 후보 추출 (max-heap 으로 K-th 미만만 유지)
-        PriorityQueue<float[]> heap = new PriorityQueue<>(
-                candidateSize, (a, b) -> Float.compare(b[0], a[0]));
+        PriorityQueue<float[]> heap = new PriorityQueue<>(candidateSize, (a, b) -> Float.compare(b[0], a[0]));
 
         for (int i = 0; i < scanList.size(); i++) {
             float dist = asymmetricDistance(lookup, scanList.get(i).getPqCode());
@@ -192,7 +207,7 @@ public class PQFiltering implements ItemFiltering {
             log.warn("[PQFilter] No candidates found (filter={})", classFilter);
             return List.of();
         }
-        List<SearchResult> candidates = searchMapper.findResnet50Phase2Targets(topUuids, id);
+        List<SearchResult> candidates = searchMapper.findResnet50Phase2Targets(topUuids, id, probes);
         long t3 = System.currentTimeMillis();
 
         // 5. 코사인 유사도 계산
@@ -216,35 +231,6 @@ public class PQFiltering implements ItemFiltering {
     // 내부 계산 — lookup / asymmetric distance / cosine
     // ════════════════════════════════════════
 
-    /**
-     * 스캔 대상 엔트리 목록 구성.
-     * <p>
-     * IVF 활성: 질의와 가까운 coarse cell nprobe개를 골라 그 셀들의 엔트리만 합침.
-     * IVF 비활성: 전체 인덱스(전수 스캔 폴백).
-     * <p>
-     * classFilter 가 있으면 셀 선택과 무관하게 detected_class 가 일치하는 엔트리만 남김(후처리).
-     */
-    private List<PqEntry> collectScanList(float[] queryEmbedding, String classFilter) {
-        List<PqEntry> base;
-        if (ivfEnabled) {
-            int[] probes = selectProbes(queryEmbedding);
-            base = new ArrayList<>();
-            for (int cell : probes) {
-                List<PqEntry> bucket = pqIndexByCoarse.get(cell);
-                if (bucket != null) base.addAll(bucket);
-            }
-        } else {
-            base = pqIndex;
-        }
-        if (classFilter == null || classFilter.isEmpty()) {
-            return base;
-        }
-        List<PqEntry> filtered = new ArrayList<>(base.size());
-        for (PqEntry e : base) {
-            if (classFilter.equals(e.getDetectedClass())) filtered.add(e);
-        }
-        return filtered;
-    }
 
     /**
      * 질의 임베딩과 가장 가까운 coarse centroid nProbe개의 cell id 반환.

@@ -29,15 +29,37 @@
         INNER JOIN image_info i
             ON s.item_id = i.item_id
         WHERE 1=1
+
+        <if test="probes != null and probes.length > 0">
+            AND i.COARSE_ID IN
+            <foreach collection="probes" item="probe" open="(" close=")" separator=",">
+                #{probe}
+            </foreach>
+        </if>
+
         <if test="id != null">
             AND i.item_id != #{id}
         </if>
+
         <if test="keySet != null and keySet.size() > 0">
             AND i.image_uuid IN
             <foreach collection="keySet" item="item" open="(" close=")" separator=",">
                 #{item}
             </foreach>
         </if>
+    </select>
+
+    <!-- 완전탐색(brute-force) 평가용 — 전체 아이템의 fp16 임베딩 + 상품 정보.
+         BruteForceSearch 가 최초 1회 로드해 메모리에 정규화 벡터로 캐시. -->
+    <select id="findAllResnet50Embeddings" resultType="SearchResult">
+        SELECT
+            s.item_id, s.item_title, s.item_price,
+            i.image_url, i.image_uuid,
+            i.embedding_value AS embeddingValue
+        FROM shop_board s
+        INNER JOIN image_info i
+            ON s.item_id = i.item_id
+        WHERE i.embedding_value IS NOT NULL
     </select>
 
 </mapper>
