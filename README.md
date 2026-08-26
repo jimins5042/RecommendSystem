@@ -1,12 +1,16 @@
 # 고속 이미지 검색을 지원하는 이미지 기반 추천 시스템
 
-배포 주소 : https://port-0-recommendsystem-m06bzsd06bb1d433.sel4.cloudtype.app/shop/main
+배포 주소 : [https://mekaive.com/search/findImg](https://mekaive.com/search/findImg)
 
-저장소 : [RecommendSystem](https://github.com/jimins5042/RecommendSystem)(Backend) · [RecommandSystem_py](https://github.com/jimins5042/RecommandSystem_py)(ML)
+저장소
+- [RecommendSystem](https://github.com/jimins5042/RecommendSystem)(Backend) 
+- [RecommandSystem_py](https://github.com/jimins5042/RecommandSystem_py)(ML)
 
 ## 프로젝트 소개
 
 > **ResNet50 임베딩과 IVF-PQ 기반 ANN 탐색을 활용한 유사 이미지 추천 시스템**
+<img width="1320" height="641" alt="image" src="https://github.com/user-attachments/assets/1d7db1e9-d3c5-427f-a1c5-ac9c861e2f51" />
+
 
 - 현재 보고 있는 상품 이미지와 시각적으로 유사한 이미지의 상품을 보여주는 시스템
 - ResNet50 모델로 추출한 임베딩 벡터를 IVF-PQ 방식으로 압축·인덱싱하여, 일정 수준의 정확도를 유지하면서 빠른 검색 속도를 보장
@@ -250,11 +254,5 @@ IVF-PQ 탐색 후 후보 이미지(약 100건)의 메타데이터·상품 정보
 ## 이전 유사 이미지 검색 방법
 
 초기에는 VGG16 임베딩을 희소 인덱싱(LSH-MinHash / Bitwise AND)으로 검색했으나, 저장공간이 지수적으로 증가하고 파라미터 튜닝에 민감한 한계가 있어 ResNet50 + IVF-PQ 방식으로 전환함.
-아래 링크 참고
-[유사이미지 검색 방법](https://github.com/jimins5042/RecommendSystem/tree/master/readMe/README_v1.md)(ML)
 
-<br>
-
-## 화면 구성
-
-![화면 구성](https://github.com/user-attachments/assets/02367d7d-28f6-495b-9e2f-2854ee016c50)
+[VGG16 임베딩을 이용한 유사이미지 검색 방법](https://github.com/jimins5042/RecommendSystem/tree/master/readMe/README_v1.md)
