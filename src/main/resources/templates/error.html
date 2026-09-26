@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<!--
+  전역 에러 페이지.
+  GlobalExceptionHandler 가 렌더링하며, 필터/디스패처 밖에서 발생한 오류(404 등)도
+  스프링 부트 기본 에러 뷰 규칙에 따라 이 파일로 들어온다.
+  에러 상황에서 2차 실패가 나지 않도록 fragment/외부 CDN 의존 없이 단독으로 동작한다.
+-->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>에러 | Mekaive Shop</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f7f7f9;
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+      color: #333;
+    }
+    .error-box {
+      text-align: center;
+      padding: 40px 48px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0, 0, 0, .08);
+    }
+    .error-box h1 { margin: 0 0 12px; font-size: 22px; }
+    .error-box p { margin: 0 0 8px; color: #666; font-size: 14px; }
+    .error-box .code { color: #999; font-size: 12px; }
+    .error-box a {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 22px;
+      background: #212529;
+      color: #fff;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="error-box">
+  <h1>에러가 발생했습니다!</h1>
+  <p>요청을 처리하지 못했습니다. 메인 페이지로 이동합니다.</p>
+  <p class="code">
+    <span th:if="${status}" th:text="'CODE ' + ${status}">CODE 500</span>
+    <span th:if="${errorId}" th:text="' / ID ' + ${errorId}"></span>
+  </p>
+  <!-- alert 을 닫았는데 이동이 안 된 경우를 위한 수동 이동 -->
+  <a href="/shop/main">메인으로 가기</a>
+</div>
+
+<script th:inline="none">
+  alert('에러가 발생했습니다!');
+  // replace 로 이동해 에러 페이지가 히스토리에 남지 않게 한다(뒤로가기 시 에러 재현 방지)
+  window.location.replace('/shop/main');
+</script>
+
+</body>
+</html>

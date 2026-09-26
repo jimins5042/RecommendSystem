@@ -1,13 +1,14 @@
 package shop.RecommendSystem.shoppingMall;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import shop.RecommendSystem.dto.*;
+import shop.RecommendSystem.repository.mapper.ItemMapper;
 import shop.RecommendSystem.search.SearchService;
 
 import java.io.IOException;
@@ -24,6 +25,7 @@ public class ShopController {
     private final ReplyService replyService;
     private final ShopRepository shopRepository;
     private final SearchService searchService;
+    private final ItemMapper itemMapper;
 
 
     @GetMapping("/shop/itemList")
@@ -49,10 +51,14 @@ public class ShopController {
     }
 
     @GetMapping("/shop/main")
-    public String shopMain(
-            @RequestParam(value = "page", defaultValue = "1") Long page,
-            Model model) {
+    public String shopMain(HttpSession session,
+                           @RequestParam(value = "page", defaultValue = "1") Long page,
+                           Model model) {
         try {
+
+
+
+            List<Item> samples = itemMapper.selectRandomList(2L, session.getId());
 
             Map result = shopService.findThumbnailAll("all", page);
 
@@ -61,6 +67,7 @@ public class ShopController {
 
             // 모델에 데이터 추가
             model.addAttribute("items", items);
+            model.addAttribute("samples", samples);
             model.addAttribute("pageDto", pageDto);
 
         } catch (Exception e) {
@@ -98,20 +105,20 @@ public class ShopController {
     }
 
     @GetMapping("/shop/detail/{id}")
-    public String showItem(@PathVariable("id") Long id, Model model) {
+    public String showItem(@PathVariable("id") Long id, @RequestParam(value = "img", defaultValue = "-1") String imgUuid,Model model) {
 
 
         try {
             log.info("=== 이미지 상세 조회 ===");
 
             // 상품 정보 조회
-            Item item = shopRepository.findById(id);
+            Item item = shopRepository.findById(id, imgUuid);
 
             //추천 상품 조회
             if (item.getEmbeddingValue() != null) {
 
                 List<SearchResult> results = searchService.searchSimilarItems(
-                        new ItemFilteringVo().pqFiltering(item.getEmbeddingValue(), item.getDetectedClass()),
+                        new ItemFilteringVo().pqFiltering(item.getEmbeddingValue()),
                         8,
                         id);
 

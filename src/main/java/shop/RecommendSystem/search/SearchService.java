@@ -1,18 +1,17 @@
 package shop.RecommendSystem.search;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import shop.RecommendSystem.dto.ImageFeatureApiDto;
 import shop.RecommendSystem.dto.ItemFilteringVo;
 import shop.RecommendSystem.dto.SearchResult;
 import shop.RecommendSystem.recommend.ItemFiltering.ItemFiltering;
-import shop.RecommendSystem.recommend.ItemFiltering.SparseFeatureIndexing;
 import shop.RecommendSystem.recommend.ItemFiltering.PQFiltering;
+import shop.RecommendSystem.recommend.ItemFiltering.SparseFeatureIndexing;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +21,35 @@ public class SearchService {
     @Qualifier("resnet")
     private final ItemFiltering itemFiltering;
 
+    private final PQFiltering pqFiltering;
+    private final SparseFeatureIndexing sparseFeatureIndexing;
+
     public List<SearchResult> searchSimilarItems(ItemFilteringVo searchParam, int resultSize, Long id) {
         return itemFiltering.searchSimilarItem(searchParam, resultSize, id);
+    }
+
+
+    public List<SearchResult> searchBranchByBackbone(String backbone, ImageFeatureApiDto apiResult){
+
+        List<SearchResult> results;
+        if ("resnet50".equals(backbone)) {
+
+            results = pqFiltering.searchSimilarItem(
+                    new ItemFilteringVo().pqFiltering(apiResult.getEmbedding()),
+                    20,
+                    null);
+
+        } else if ("vggnet".equals(backbone)) {
+
+            results = sparseFeatureIndexing.searchSimilarItem(
+                    new ItemFilteringVo().sparseFeatureIndexing(apiResult.getFeatures(), apiResult.getOrder()),
+                    20,
+                    null);
+        } else {
+            return null;
+        }
+
+        return results;
     }
 
 //    public List<SearchResult> searchSimilarItems(String order, byte[] feature, int resultSize, Long id) throws JsonProcessingException {

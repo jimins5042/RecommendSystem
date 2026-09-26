@@ -134,7 +134,6 @@ public class PQFiltering implements ItemFiltering {
 
     /**
      * queryEmbedding 질의 임베딩 (float[2048])
-     * classFilter    null 이면 전체 검색, 아니면 해당 detected_class 만
      *
      * @param resultSize 최종 반환 개수
      * @param id         본인 상품 제외 (null 허용)
@@ -149,7 +148,6 @@ public class PQFiltering implements ItemFiltering {
     public List<SearchResult> searchSimilarItem(ItemFilteringVo searchParam, int resultSize, Long id) {
 
         float[] queryEmbedding = decodeFp16(searchParam.getEmbeddingBytes());
-        String classFilter = searchParam.getClassFilter();
 
         long t0 = System.currentTimeMillis();
 
@@ -204,7 +202,6 @@ public class PQFiltering implements ItemFiltering {
 
         // 4. Phase 2 — DB 에서 fp16 임베딩 + 상품 정보 로드
         if (topUuids.isEmpty()) {
-            log.warn("[PQFilter] No candidates found (filter={})", classFilter);
             return List.of();
         }
         List<SearchResult> candidates = searchMapper.findResnet50Phase2Targets(topUuids, id, probes);

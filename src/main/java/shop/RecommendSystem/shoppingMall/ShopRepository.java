@@ -32,8 +32,8 @@ public class ShopRepository {
         return item.getItemId(); // 자동 생성된 itemId 반환
     }
 
-    public Item findById(Long itemId) {
-        List<Item> itemList = itemMapper.findById(itemId);
+    public Item findById(Long itemId, String imgUuid) {
+        List<Item> itemList = itemMapper.findById(itemId, imgUuid);
         if(itemList == null || itemList.isEmpty()) {
             return null;
         }

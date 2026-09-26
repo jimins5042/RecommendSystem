@@ -1,6 +1,7 @@
 package shop.RecommendSystem.search;
 
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -12,11 +13,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import shop.RecommendSystem.dto.*;
 import shop.RecommendSystem.recommend.ImageFeature.ImageFeature;
-import shop.RecommendSystem.recommend.ItemFiltering.BruteForceSearch;
 import shop.RecommendSystem.recommend.ItemFiltering.PQFiltering;
 import shop.RecommendSystem.recommend.ItemFiltering.SparseFeatureIndexing;
 import shop.RecommendSystem.repository.mapper.ItemMapper;
-import shop.RecommendSystem.shoppingMall.ShopService;
 
 import java.util.*;
 
@@ -25,40 +24,39 @@ import java.util.*;
 @Slf4j
 public class SearchController {
 
-    private final PQFiltering pqFiltering;
-    private final SparseFeatureIndexing sparseFeatureIndexing;
-    private final BruteForceSearch bruteForceSearch;
 
+    private final SearchService searchService;
     private final ImageFeature imageFeature;
-    private final ShopService shopService;
     private final ItemMapper itemMapper;
 
     @GetMapping("/search/findImg")
-    public String findImg(
-            @RequestParam(value = "backbone", defaultValue = "resnet50") String backbone,
-            Model model) {
-        String normalized = normalizeBackbone(backbone);
-        model.addAttribute("currentBackbone", normalized);
+    public String findImg(HttpSession session,
+                          @RequestParam(value = "backbone", defaultValue = "resnet50") String backbone,
+                          Model model) {
+
+        backbone = normalizeBackbone(backbone);
+
+        model.addAttribute("currentBackbone", backbone);
 
         // 데모 페이지용 예시 상품 (썸네일 있는 최신 상품 6개)
         try {
-            Map<String, Object> page = shopService.findThumbnailAll("all", 1L, 6L);
-            if (page != null && page.get("items") instanceof List) {
-                List<Item> demoItems = ((List<Item>) page.get("items")).stream()
-                        .filter(it -> it != null && it.getImageUrl() != null)
-                        .toList();
-                model.addAttribute("demoItems", demoItems);
-            }
-        } catch (Exception e) {
+            List<Item> demoItems = itemMapper.selectRandomList(2L, session.getId());
+            model.addAttribute("demoItems", demoItems);
+
+        } catch (
+                Exception e) {
             log.warn("데모 상품 조회 실패 - 빈 목록으로 진행: {}", e.getMessage());
         }
         return "search/searchResult";
     }
 
     private String normalizeBackbone(String backbone) {
-        if (backbone == null) return "resnet50";
-        String b = backbone.trim().toLowerCase();
-        return ("vggnet".equals(b) || "resnet50".equals(b)) ? b : "resnet50";
+
+        if(backbone == null || (!"resnet50".equals(backbone) && !("vggnet").equals(backbone))) {
+            backbone = "resnet50";
+        }
+
+        return backbone;
     }
 
 
@@ -73,8 +71,7 @@ public class SearchController {
     @ResponseBody
     public Map<String, Object> insert(
             @RequestParam("imgFile") MultipartFile file,
-            @RequestParam(value = "backbone", defaultValue = "resnet50") String backbone,
-            @RequestParam(value = "useClassFilter", defaultValue = "false") boolean useClassFilter) throws Exception {
+            @RequestParam(value = "backbone", defaultValue = "resnet50") String backbone) throws Exception {
 
         backbone = normalizeBackbone(backbone);
 
@@ -82,23 +79,8 @@ public class SearchController {
         ImageFeatureApiDto apiResult = imageFeature.sendImageToFastAPI(file, backbone);
 
         // 백본별 검색 분기
-        List<SearchResult> results;
-        if ("resnet50".equals(backbone)) {
-            String classFilter = useClassFilter ? apiResult.getDetectedClass() : null;
-            results = pqFiltering.searchSimilarItem(
-                    new ItemFilteringVo().pqFiltering(apiResult.getEmbedding(), classFilter),
-                    20,
-                    null);
+        List<SearchResult> results = searchService.searchBranchByBackbone(backbone, apiResult);
 
-        } else if ("vggnet".equals(backbone)) {
-
-            results = sparseFeatureIndexing.searchSimilarItem(
-                    new ItemFilteringVo().sparseFeatureIndexing(apiResult.getFeatures(), apiResult.getOrder()),
-                    20,
-                    null);
-        } else {
-            return null;
-        }
 
         // 검색 이미지 (base64)
         String base64Image = Base64.getEncoder().encodeToString(file.getBytes());
@@ -128,105 +110,18 @@ public class SearchController {
     @ResponseBody
     public List<SearchResult> crop(
             @RequestParam("imgFile") MultipartFile file,
-            @RequestParam(value = "backbone", defaultValue = "resnet50") String backbone,
-            @RequestParam(value = "useClassFilter", defaultValue = "false") boolean useClassFilter) throws Exception {
+            @RequestParam(value = "backbone", defaultValue = "resnet50") String backbone) throws Exception {
+
         // 크롭 이미지 전용 검색 (JSON 리스트 반환). 메인 검색과 동일한 백본 파라미터 사용.
         backbone = normalizeBackbone(backbone);
         ImageFeatureApiDto apiResult = imageFeature.sendCropImageToFastAPI(file, backbone);
 
         // 백본별 검색 분기
-        List<SearchResult> results;
-        if ("resnet50".equals(backbone)) {
-            String classFilter = useClassFilter ? apiResult.getDetectedClass() : null;
-            results = pqFiltering.searchSimilarItem(
-                    new ItemFilteringVo().pqFiltering(apiResult.getEmbedding(), classFilter),
-                    20,
-                    null);
-
-        } else if ("vggnet".equals(backbone)) {
-
-            results = sparseFeatureIndexing.searchSimilarItem(
-                    new ItemFilteringVo().sparseFeatureIndexing(apiResult.getFeatures(), apiResult.getOrder()),
-                    20,
-                    null);
-        } else {
-            return null;
-        }
+        List<SearchResult> results = searchService.searchBranchByBackbone(backbone, apiResult);
 
         return results;
     }
 
-
-    /**
-     * ResNet-50 완전탐색(brute-force exact cosine) 검색 — 평가용 정답셋(ground truth).
-     * <p>
-     * PQ 와 동일한 ResNet-50 임베딩을 쓰되 근사(PQ/IVF) 없이 전체 코퍼스와
-     * 정밀 코사인을 계산한다. 이 결과를 기준으로 PQ 의 Recall@K 를 잰다.
-     * 응답은 /search/img 와 동일 형태(results, elapsedMs, currentBackbone).
-     */
-    @PostMapping("/search/img/exact")
-    @ResponseBody
-    public Map<String, Object> exact(
-            @RequestParam("imgFile") MultipartFile file,
-            @RequestParam(value = "resultSize", defaultValue = "50") int resultSize) throws Exception {
-
-        if (resultSize < 1) resultSize = 1;
-        if (resultSize > 200) resultSize = 200;
-
-        // PQ 검색과 동일하게 ResNet-50 백본으로 질의 임베딩 추출
-        ImageFeatureApiDto apiResult = imageFeature.sendImageToFastAPI(file, "resnet50");
-
-        long t0 = System.currentTimeMillis();
-        List<SearchResult> results = bruteForceSearch.search(apiResult.getEmbedding(), resultSize, null);
-        long elapsedMs = System.currentTimeMillis() - t0;
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("results", results);
-        response.put("elapsedMs", elapsedMs);
-        response.put("currentBackbone", "resnet50_exact");
-        return response;
-    }
-
-    /**
-     * 평가용 카테고리별 랜덤 샘플. 응답 구조:
-     * { perCategory, categories: [ { category, items: [ {itemId, itemTitle, imageUrl} ] } ] }
-     */
-    @GetMapping("/search/eval/samples")
-    @ResponseBody
-    public Map<String, Object> evalSamples(
-            @RequestParam(value = "perCategory", defaultValue = "20") int perCategory) {
-
-        // 비정상 입력 방어
-        if (perCategory < 1) perCategory = 1;
-        if (perCategory > 100) perCategory = 100;
-
-        List<Item> samples = itemMapper.findRandomByCategory(perCategory);
-
-        // 카테고리별로 그룹핑 (조회 결과는 이미 category, rn 정렬됨)
-        Map<String, List<Map<String, Object>>> grouped = new LinkedHashMap<>();
-        for (Item it : samples) {
-            if (it.getImageUrl() == null || it.getCategory() == null) continue;
-            grouped.computeIfAbsent(it.getCategory(), k -> new ArrayList<>())
-                    .add(Map.of(
-                            "itemId", it.getItemId(),
-                            "itemTitle", it.getItemTitle() == null ? "" : it.getItemTitle(),
-                            "imageUrl", it.getImageUrl()
-                    ));
-        }
-
-        List<Map<String, Object>> categories = new ArrayList<>();
-        for (Map.Entry<String, List<Map<String, Object>>> e : grouped.entrySet()) {
-            categories.add(Map.of(
-                    "category", e.getKey(),
-                    "items", e.getValue()
-            ));
-        }
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("perCategory", perCategory);
-        response.put("categories", categories);
-        return response;
-    }
 
     // 반복되는 맵 생성 로직 분리
     private Map<String, Object> createDetectionMap(String className, Object confidence, String[] coordinate) {

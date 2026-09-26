@@ -12,7 +12,6 @@ public class ItemFilteringVo {
 
     // resnet을 이용한 ivf-pq 필터링 용
     private byte[] embeddingBytes;
-    private String classFilter;
 
     public ItemFilteringVo sparseFeatureIndexing(byte[] targetBitArray, String layerList) {
         this.targetBitArray = targetBitArray;
@@ -21,10 +20,8 @@ public class ItemFilteringVo {
         return this;
     }
 
-    public ItemFilteringVo pqFiltering(byte[] embeddingBytes, String classFilter) {
+    public ItemFilteringVo pqFiltering(byte[] embeddingBytes) {
         this.embeddingBytes = embeddingBytes;
-        this.classFilter = classFilter;
-
         return this;
     }
 

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="shop.RecommendSystem.repository.mapper.AccessLogMapper">
+
+    <!--
+        ExecutorType.BATCH 세션에서 반복 호출된다.
+        INSERT ALL 대신 단건 INSERT 를 JDBC 배치로 묶는 방식을 쓴다 —
+        INSERT ALL 은 시퀀스(NEXTVAL) 사용이 제한되기 때문.
+    -->
+    <insert id="insert" parameterType="shop.RecommendSystem.dto.AccessLog">
+        INSERT INTO access_log (log_id, log_time, client_ip, method, uri, query_string,
+                                status, duration_ms, user_agent, referer, session_id,
+                                error_id, suspicious)
+        VALUES (access_log_seq.NEXTVAL, #{logTime}, #{clientIp}, #{method}, #{uri}, #{queryString},
+                #{status}, #{durationMs}, #{userAgent}, #{referer}, #{sessionId},
+                #{errorId}, #{suspicious})
+    </insert>
+
+    <delete id="deleteNormalOlderThan">
+        DELETE FROM access_log
+        WHERE suspicious = 'N'
+          AND log_time &lt; SYSTIMESTAMP - NUMTODSINTERVAL(#{days}, 'DAY')
+    </delete>
+
+    <delete id="deleteSuspiciousOlderThan">
+        DELETE FROM access_log
+        WHERE suspicious = 'Y'
+          AND log_time &lt; SYSTIMESTAMP - NUMTODSINTERVAL(#{days}, 'DAY')
+    </delete>
+
+    <select id="findRecentSuspicious" resultType="shop.RecommendSystem.dto.AccessLog">
+        SELECT log_id, log_time, client_ip, method, uri, query_string,
+               status, duration_ms, user_agent, referer, session_id,
+               error_id, suspicious
+        FROM access_log
+        WHERE suspicious = 'Y'
+        ORDER BY log_time DESC
+        FETCH FIRST #{limit} ROWS ONLY
+    </select>
+
+</mapper>

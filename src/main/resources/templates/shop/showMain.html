@@ -13,7 +13,7 @@
     <div th:insert="~{fragments/searchBar :: searchBar}"></div>
 
     <!-- ===== 추천 상품 섹션 ===== -->
-    <section class="section-wrap" th:if="${items != null}">
+    <section class="section-wrap" th:if="${samples != null}">
         <div class="container">
 
             <h2 class="section-title">오늘의 추천 상품</h2>
@@ -24,19 +24,19 @@
                     <i class="fa fa-chevron-left"></i>
                 </button>
                 <div class="scroll-container" id="recommendScroll">
-                    <div class="scroll-card" th:each="item : ${items}">
-                        <a th:href="@{/shop/detail/{id}(id=${item.itemId})}">
+                    <div class="scroll-card" th:each="sample : ${samples}">
+                        <a th:href="@{/shop/detail/{id}(id=${sample.itemId})}">
                             <div class="product-card">
-                                <div class="product-card__img-wrap" th:if="${item.imageUrl != null}">
-                                    <img th:src="${item.imageUrl}" th:alt="${item.itemTitle}" loading="lazy">
+                                <div class="product-card__img-wrap" th:if="${sample.imageUrl != null}">
+                                    <img th:src="${sample.imageUrl}" th:alt="${sample.itemTitle}" loading="lazy">
                                 </div>
-                                <div class="product-card__no-img" th:if="${item.imageUrl == null}">
+                                <div class="product-card__no-img" th:if="${sample.imageUrl == null}">
                                     <i class="fa fa-image fa-2x"></i>
                                 </div>
                                 <div class="product-card__body">
-                                    <p class="product-card__title" th:text="${item.itemTitle}"></p>
+                                    <p class="product-card__title" th:text="${sample.itemTitle}"></p>
                                     <p class="product-card__price"
-                                       th:text="'₩' + ${#numbers.formatInteger(item.itemPrice, 0, 'COMMA')}"></p>
+                                       th:text="'₩' + ${#numbers.formatInteger(sample.itemPrice, 0, 'COMMA')}"></p>
                                 </div>
                             </div>
                         </a>

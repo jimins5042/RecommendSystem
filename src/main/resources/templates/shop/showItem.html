@@ -161,7 +161,7 @@
                     </button>
                     <div class="scroll-container" id="scrollWrapper">
                         <div class="scroll-card" th:each="result : ${results}">
-                            <a th:href="@{/shop/detail/{itemId}(itemId=${result.itemId})}">
+                            <a th:href="@{/shop/detail/{itemId}(itemId=${result.itemId}, img=${result.imageUuid})}">
                                 <div class="product-card">
                                     <div class="product-card__img-wrap">
                                         <img th:src="${result.imageUrl != null ? result.imageUrl : '/images/default.jpg'}"

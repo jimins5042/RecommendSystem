@@ -18,7 +18,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class ShopService {
-    private final ItemMapper itemMapper;
     private final ShopRepository shopRepository;
     private final UploadService uploadService;
 
